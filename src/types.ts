@@ -1,4 +1,5 @@
 import type { Address } from 'viem';
+import type { TransactionResult as SuiTransactionResult } from '@mysten/sui/transactions';
 
 export type ChainType = 'evm' | 'sui' | 'icon';
 export type ChainName = 'sui' | 'arb' | 'pol' | 'icon';
@@ -156,3 +157,22 @@ export type IconEventLog = {
 export type IconTransactionEventLogs = {
   eventLogs: IconEventLog[];
 };
+
+export type SuiSwapOrderEvent = {
+  id: string;
+  emitter: string;
+  src_nid: string;
+  dst_nid: string;
+  creator: string;
+  destination_address: string;
+  token: string;
+  amount: bigint;
+  to_token: string;
+  to_amount: bigint;
+  data: Uint8Array;
+};
+
+export type SuiCoinParamType =
+  | { $kind: 'NestedResult'; NestedResult: [number, number] }
+  | SuiTransactionResult
+  | string;

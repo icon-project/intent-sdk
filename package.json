@@ -23,7 +23,9 @@
     "lint": "biome lint .",
     "check-exports": "attw --pack . --ignore-rules=cjs-resolves-to-esm",
     "prepublishOnly": "npm run ci",
-    "local-release": "changeset version && changeset publish"
+    "local-release": "changeset version && changeset publish",
+    "clean": "rm -rf node_modules && rm -rf dist && rm -rf package-lock.json",
+    "prepare": "husky"
   },
   "files": ["dist"],
   "type": "module",
@@ -37,11 +39,21 @@
     "viem": "^2.21.35"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
     "@arethetypeswrong/cli": "^0.16.4",
+    "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.27.9",
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
     "@types/node": "^22.9.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
     "typescript": "5.5.4",
     "vitest": "^2.1.3"
+  },
+  "commitlint": {
+    "extends": ["@commitlint/config-conventional"]
+  },
+  "lint-staged": {
+    "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}": ["biome lint --write ./src"]
   }
 }
