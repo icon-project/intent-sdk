@@ -35,14 +35,14 @@
     "include": ["**/*.ts", "**/*.js", "**/*.json"],
     "rules": {
       "style": {
-        "noNonNullAssertion": "error",
+        "noNonNullAssertion": "warn",
         "useTemplate": "error",
         "useImportType": "warn",
         "useNodejsImportProtocol": "error",
         "noInferrableTypes": "error",
         "useEnumInitializers": "error",
         "useNumberNamespace": "error",
-        "noUselessElse": "error",
+        "noUselessElse": "off",
         "noUnusedTemplateLiteral": "error",
         "useSingleVarDeclarator": "off",
         "useSelfClosingElements": "off",

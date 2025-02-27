@@ -60,14 +60,14 @@ export class SolverApiService {
           },
         } satisfies IntentQuoteResponse,
       };
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(`[SolverApiService.getQuote] failed. Details: ${JSON.stringify(e)}`);
       return {
         ok: false,
         error: {
           detail: {
             code: IntentErrorCode.UNKNOWN,
-            message: e ? (e.message ?? JSON.stringify(e)) : 'Unknown error',
+            message: e ? JSON.stringify(e) : 'Unknown error',
           },
         },
       };
@@ -120,14 +120,14 @@ export class SolverApiService {
         ok: true,
         value: await response.json(),
       };
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(`[SolverApiService.postExecution] failed. Details: ${JSON.stringify(e)}`);
       return {
         ok: false,
         error: {
           detail: {
             code: IntentErrorCode.UNKNOWN,
-            message: e ? (e.message ?? JSON.stringify(e)) : 'Unknown error',
+            message: e ? JSON.stringify(e) : 'Unknown error',
           },
         },
       };
@@ -159,14 +159,14 @@ export class SolverApiService {
         ok: true,
         value: await response.json(),
       };
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(`[SolverApiService.getStatus] failed. Details: ${JSON.stringify(e)}`);
       return {
         ok: false,
         error: {
           detail: {
             code: IntentErrorCode.UNKNOWN,
-            message: e ? (e.message ?? JSON.stringify(e)) : 'Unknown error',
+            message: e ? JSON.stringify(e) : 'Unknown error',
           },
         },
       };

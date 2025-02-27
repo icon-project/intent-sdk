@@ -1,6 +1,6 @@
 import { type Address, type Hash, type TransactionReceipt, parseEventLogs, stringToBytes } from 'viem';
 import { erc20Abi, intentAbi } from '../abis/index.js';
-import { EvmProvider, SwapOrder } from '../entities/index.js';
+import { type EvmProvider, SwapOrder } from '../entities/index.js';
 import type { ChainConfig, CreateIntentOrderPayload, EvmChainConfig, Result } from '../types.js';
 
 export class EvmIntentService {

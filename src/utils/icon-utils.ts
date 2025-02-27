@@ -1,6 +1,7 @@
 import { encode as rlpEncode } from 'rlp';
-import { IconProvider, SwapOrder } from '../entities/index.js';
-import IconService, { CallTransactionBuilder, Converter } from 'icon-sdk-js';
+import { type IconProvider, SwapOrder } from '../entities/index.js';
+import type IconService from 'icon-sdk-js';
+import { CallTransactionBuilder, Converter } from 'icon-sdk-js';
 import type { Result } from '../types.js';
 import { isIconEventLog, isIconTransactionEventLogs } from '../guards.js';
 import { ICON_TX_RESULT_WAIT_MAX_RETRY } from '../constants.js';
@@ -41,12 +42,12 @@ export function parseSwapOrder(receipt: IconService.TransactionResult): Result<S
       ok: false,
       error: new Error('Failed to find SwapIntent event in given tx receipt'),
     };
-  } else {
-    return {
-      ok: false,
-      error: new Error('[IconUtils.waitForTransaction] receipt is not of type IconTransactionEventLogs'),
-    };
   }
+
+  return {
+    ok: false,
+    error: new Error('[IconUtils.waitForTransaction] receipt is not of type IconTransactionEventLogs'),
+  };
 }
 
 export async function waitForTransaction(
@@ -64,9 +65,9 @@ export async function waitForTransaction(
             ok: true,
             value: receipt,
           };
-        } else {
-          throw new Error('Transaction result not equal to 1');
         }
+
+        throw new Error('Transaction result not equal to 1');
       } catch (error) {
         attempt++;
         if (attempt >= ICON_TX_RESULT_WAIT_MAX_RETRY) {
@@ -113,7 +114,7 @@ export function buildTransaction(
     .build();
 }
 
-export async function estimateStepCost(tx: any, provider: IconProvider): Promise<BigNumber | undefined> {
+export async function estimateStepCost(tx: unknown, provider: IconProvider): Promise<BigNumber | undefined> {
   try {
     const response = await fetch(provider.wallet.iconDebugRpcUrl, {
       method: 'POST',
@@ -203,12 +204,9 @@ export class TokenFallbackData {
    */
   public toHex(): string {
     const bytes = this.toICONBytes();
-    return (
-      '0x' +
-      Array.from(bytes)
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('')
-    );
+    return `0x${Array.from(bytes)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')}`;
   }
 
   /**

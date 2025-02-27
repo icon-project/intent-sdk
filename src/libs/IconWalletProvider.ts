@@ -1,5 +1,5 @@
 import type { HttpPrefixedUrl, IconEoaAddress, Result } from '../types.js';
-import { IconService, CallTransaction, Wallet as IconWallet, SignedTransaction } from 'icon-sdk-js';
+import { type IconService, type CallTransaction, type Wallet as IconWallet, SignedTransaction } from 'icon-sdk-js';
 import { requestJsonRpc } from './HanaWalletConnector.js';
 
 export class IconWalletProvider {

@@ -1,5 +1,5 @@
 import { stringToBytes } from 'viem';
-import { SwapOrder, IconProvider } from '../entities/index.js';
+import { SwapOrder, type IconProvider } from '../entities/index.js';
 import type { CreateIntentOrderPayload, IconChainConfig, Result, ChainConfig } from '../types.js';
 import { Converter as IconConverter } from 'icon-sdk-js';
 import {
@@ -120,12 +120,12 @@ export class IconIntentService {
             ok: true,
             value: swapOrderResult.value,
           };
-        } else {
-          return swapOrderResult;
         }
-      } else {
-        return txReceiptResult;
+
+        return swapOrderResult;
       }
+
+      return txReceiptResult;
     } catch (e) {
       return {
         ok: false,

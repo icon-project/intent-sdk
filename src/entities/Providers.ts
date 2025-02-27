@@ -9,8 +9,8 @@ import {
   type PublicClient,
   type WalletClient,
 } from 'viem';
-import { type Wallet, type WalletAccount } from '@mysten/wallet-standard';
-import { SuiClient } from '@mysten/sui/client';
+import type { Wallet, WalletAccount } from '@mysten/wallet-standard';
+import type { SuiClient } from '@mysten/sui/client';
 import { IconService, HttpProvider, Wallet as IconWallet } from 'icon-sdk-js';
 import type { AddressOrPrivateKeyInit, ChainName, ChainType, HttpPrefixedUrl, IconEoaAddress } from '../types.js';
 import { getEvmViemChain } from '../constants.js';
@@ -23,7 +23,7 @@ import {
 } from '../guards.js';
 import { IconWalletProvider } from '../libs/IconWalletProvider.js';
 
-export type CustomProvider = { request(...args: any): Promise<any> };
+export type CustomProvider = { request: (...args: unknown[]) => Promise<unknown> };
 
 export type EvmUninitializedConfig = {
   userAddress: Address;

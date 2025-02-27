@@ -115,7 +115,7 @@ export class SwapOrder implements ISwapOrder {
     } as const;
   }
 
-  public toStruct(): any {
+  public toStruct(): ISwapOrder {
     return {
       id: this.id,
       emitter: this.emitter,

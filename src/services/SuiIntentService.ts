@@ -2,8 +2,15 @@ import { bcs } from '@mysten/sui/bcs';
 import { Transaction, type TransactionResult } from '@mysten/sui/transactions';
 import { signAndExecuteTransaction, signTransaction } from '@mysten/wallet-standard';
 import { stringToBytes } from 'viem';
-import { SuiProvider, SwapOrder } from '../entities/index.js';
-import type { ChainConfig, CreateIntentOrderPayload, Result, SuiChainConfig } from '../types.js';
+import { type SuiProvider, SwapOrder } from '../entities/index.js';
+import type {
+  ChainConfig,
+  CreateIntentOrderPayload,
+  Result,
+  SuiChainConfig,
+  SuiCoinParamType,
+  SuiSwapOrderEvent,
+} from '../types.js';
 
 export class SuiIntentService {
   private constructor() {}
@@ -41,7 +48,7 @@ export class SuiIntentService {
 
       const tx = new Transaction();
 
-      const coin: any = isNative
+      const coin: SuiCoinParamType = isNative
         ? await SuiIntentService.getNativeCoin(tx, intent)
         : await SuiIntentService.getCoin(tx, intent.token, intent.amount.valueOf(), provider.account.address, provider);
 
@@ -216,7 +223,7 @@ export class SuiIntentService {
         },
       });
 
-      const order: any = transaction.events?.at(0)?.parsedJson;
+      const order = transaction.events?.at(0)?.parsedJson as SuiSwapOrderEvent;
       return {
         ok: true,
         value: new SwapOrder(

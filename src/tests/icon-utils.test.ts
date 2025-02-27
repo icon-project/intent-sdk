@@ -11,7 +11,8 @@ import {
   BigNumberToBigInt,
 } from '../utils/index.js';
 import { BigNumber } from 'bignumber.js';
-import { IconProvider } from '../entities/index.js';
+import type { IconProvider } from '../entities/index.js';
+import type IconService from 'icon-sdk-js';
 
 global.fetch = vi.fn();
 
@@ -51,7 +52,7 @@ describe('icon-utils', () => {
         ],
       };
 
-      const result = parseSwapOrder(mockReceipt as any);
+      const result = parseSwapOrder(mockReceipt as IconService.TransactionResult);
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.value.id).toBe(123n);
@@ -78,7 +79,7 @@ describe('icon-utils', () => {
         ],
       };
 
-      const result = parseSwapOrder(mockReceipt as any);
+      const result = parseSwapOrder(mockReceipt as IconService.TransactionResult);
       expect(result.ok).toBe(false);
       if (!result.ok) {
         const errorResult = result as ErrorResult;
@@ -100,7 +101,7 @@ describe('icon-utils', () => {
           },
           iconDebugRpcUrl: 'mock-url',
         },
-      } as any;
+      } as unknown as IconProvider;
 
       vi.clearAllMocks();
     });
@@ -159,7 +160,7 @@ describe('icon-utils', () => {
         wallet: {
           iconDebugRpcUrl: 'https://localhost:9080/api/v3',
         },
-      } as any;
+      } as unknown as IconProvider;
       global.fetch = vi.fn();
     });
 
@@ -211,7 +212,7 @@ describe('icon-utils', () => {
         wallet: {
           iconDebugRpcUrl: 'mock-url',
         },
-      } as any;
+      } as unknown as IconProvider;
     });
 
     it('should apply estimated step cost with buffer', async () => {

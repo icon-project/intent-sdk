@@ -32,7 +32,7 @@ export function isValidHex(str: unknown): boolean {
 
 export function bigNumberToHex(value: BigNumber): string {
   const integerPart = value.integerValue(BigNumber.ROUND_FLOOR);
-  return '0x' + integerPart.toString(16);
+  return `0x${integerPart.toString(16)}`;
 }
 
 export function lastBytesOf(x: bigint, i: number): Uint8Array {
@@ -57,9 +57,9 @@ export function uintToBytes(x: bigint): Uint8Array {
   }
   if (x < right) {
     return rlpEncode(x);
-  } else {
-    const data = rlpEncode(x);
-    data[0] = 0;
-    return data;
   }
+
+  const data = rlpEncode(x);
+  data[0] = 0;
+  return data;
 }

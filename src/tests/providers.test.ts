@@ -1,12 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { EvmProvider, IconProvider, SuiProvider } from '../entities/index.js';
+import {
+  EvmProvider,
+  IconProvider,
+  SuiProvider,
+  type EvmUninitializedConfig,
+  type IconUninitializedConfig,
+} from '../entities/index.js';
 import { IconService, HttpProvider } from 'icon-sdk-js';
+import type { SuiClient } from '@mysten/sui/client';
+import type { Wallet, WalletAccount } from '@mysten/wallet-standard';
 
 describe('Providers', () => {
   describe('EvmProvider', () => {
     it('should initialize with uninitialized config', () => {
       const provider = new EvmProvider({
-        userAddress: '0x601020c5797Cdd34f64476b9bf887a353150Cb9a' as any,
+        userAddress: '0x601020c5797Cdd34f64476b9bf887a353150Cb9a',
         chain: 'arb',
         provider: { request: async () => ({}) },
       });
@@ -17,7 +25,7 @@ describe('Providers', () => {
 
     it('should initialize with uninitialized config', () => {
       const provider = new EvmProvider({
-        userAddress: '0x601020c5797Cdd34f64476b9bf887a353150Cb9a' as any,
+        userAddress: '0x601020c5797Cdd34f64476b9bf887a353150Cb9a',
         chain: 'arb',
         provider: { request: async () => ({}) },
       });
@@ -27,7 +35,7 @@ describe('Providers', () => {
     });
 
     it('should throw error on invalid config', () => {
-      expect(() => new EvmProvider({} as any)).toThrow('Invalid configuration');
+      expect(() => new EvmProvider({} as EvmUninitializedConfig)).toThrow('Invalid configuration');
     });
   });
 
@@ -72,7 +80,7 @@ describe('Providers', () => {
     });
 
     it('should throw error on invalid config', () => {
-      expect(() => new IconProvider({} as any)).toThrow('Invalid configuration');
+      expect(() => new IconProvider({} as IconUninitializedConfig)).toThrow('Invalid configuration');
     });
   });
 
@@ -83,9 +91,9 @@ describe('Providers', () => {
 
     it('should initialize with valid config', () => {
       const provider = new SuiProvider({
-        wallet: mockWallet as any,
-        account: mockAccount as any,
-        client: mockClient as any,
+        wallet: mockWallet as Wallet,
+        account: mockAccount as WalletAccount,
+        client: mockClient as unknown as SuiClient,
       });
 
       expect(provider.wallet).toBe(mockWallet);
@@ -95,9 +103,9 @@ describe('Providers', () => {
 
     it('should maintain provided references', () => {
       const config = {
-        wallet: mockWallet as any,
-        account: mockAccount as any,
-        client: mockClient as any,
+        wallet: mockWallet as Wallet,
+        account: mockAccount as WalletAccount,
+        client: mockClient as unknown as SuiClient,
       };
       const provider = new SuiProvider(config);
 
