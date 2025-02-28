@@ -42,13 +42,13 @@ export function isIconChainConfig(value: ChainConfig): value is IconChainConfig 
 }
 
 export function isEvmUninitializedConfig(
-  value: EvmUninitializedBrowserConfig | EvmInitializedConfig,
-): value is EvmUninitializedBrowserConfig {
-  return typeof value === 'object' && 'userAddress' in value && 'chain' in value;
+  value: EvmUninitializedConfig | EvmInitializedConfig,
+): value is EvmUninitializedConfig {
+  return typeof value === 'object' && 'chain' in value;
 }
 
 export function isEvmInitializedConfig(
-  value: EvmUninitializedBrowserConfig | EvmInitializedConfig,
+  value: EvmUninitializedConfig | EvmInitializedConfig,
 ): value is EvmInitializedConfig {
   return typeof value === 'object' && 'walletClient' in value && 'publicClient' in value;
 }

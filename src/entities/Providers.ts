@@ -7,6 +7,7 @@ import {
   custom,
   type CustomTransport,
   type Hex,
+  http,
   type HttpTransport,
   type PublicClient,
   type WalletClient,
@@ -18,12 +19,15 @@ import type { AddressOrPrivateKeyInit, ChainName, ChainType, HttpPrefixedUrl, Ic
 import { getEvmViemChain } from '../constants.js';
 import {
   isEvmInitializedConfig,
+  isEvmUninitializedBrowserConfig,
   isEvmUninitializedConfig,
+  isEvmUninitializedPrivateKeyConfig,
   isIconInitializedConfig,
   isIconUninitializedConfig,
   isPrivateKeyInit,
 } from '../guards.js';
 import { IconWalletProvider } from '../libs/IconWalletProvider.js';
+import { privateKeyToAccount } from 'viem/accounts';
 
 export type CustomProvider = {
   request: (...args: unknown[]) => Promise<unknown>;
@@ -41,35 +45,49 @@ export type EvmUninitializedPrivateKeyConfig = {
   provider: string; // rpc url
 };
 
-export type EvmUninitializedConfig = EvmUninitializedBrowserConfig | EvmUninitializedPrivateKeyConfig;
-
 export type EvmInitializedConfig = {
   walletClient?: WalletClient<CustomTransport | HttpTransport, Chain, Account>;
   publicClient: PublicClient<CustomTransport | HttpTransport>;
 };
 
+export type EvmUninitializedConfig = EvmUninitializedBrowserConfig | EvmUninitializedPrivateKeyConfig;
+
 export class EvmProvider {
   private readonly _walletClient?: WalletClient<CustomTransport | HttpTransport, Chain, Account>;
   public readonly publicClient: PublicClient<CustomTransport | HttpTransport>;
 
-  constructor(payload: EvmUninitializedBrowserConfig | EvmInitializedConfig) {
+  constructor(payload: EvmUninitializedConfig | EvmInitializedConfig) {
     if (isEvmUninitializedConfig(payload)) {
-      this._walletClient = createWalletClient({
-        account: payload.userAddress,
-        transport: custom(payload.provider),
-        chain: getEvmViemChain(payload.chain),
-      });
-      this.publicClient = createPublicClient({
-        transport: custom(payload.provider),
-        chain: getEvmViemChain(payload.chain),
-      });
-    } else if (isEvmInitializedConfig(payload)) {
-      if (payload.walletClient) {
-        this._walletClient = payload.walletClient;
+      if (isEvmUninitializedBrowserConfig(payload)) {
+        this._walletClient = createWalletClient({
+          account: payload.userAddress,
+          transport: custom(payload.provider),
+          chain: getEvmViemChain(payload.chain),
+        });
+        this.publicClient = createPublicClient({
+          transport: custom(payload.provider),
+          chain: getEvmViemChain(payload.chain),
+        });
+      } else if (isEvmUninitializedPrivateKeyConfig(payload)) {
+        if (payload.privateKey) {
+          this._walletClient = createWalletClient({
+            account: privateKeyToAccount(payload.privateKey),
+            transport: http(payload.provider),
+            chain: getEvmViemChain(payload.chain),
+          });
+        }
+        this.publicClient = createPublicClient({
+          transport: http(payload.provider),
+          chain: getEvmViemChain(payload.chain),
+        });
+      } else {
+        throw new Error('Invalid configuration parameters');
       }
+    } else if (isEvmInitializedConfig(payload)) {
+      this._walletClient = payload.walletClient;
       this.publicClient = payload.publicClient;
     } else {
-      throw new Error('Invalid configuration payload passed to EvmProvider');
+      throw new Error('Invalid configuration parameters');
     }
   }
 
