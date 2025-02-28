@@ -3,7 +3,7 @@ import {
   EvmProvider,
   IconProvider,
   SuiProvider,
-  type EvmUninitializedConfig,
+  type EvmUninitializedBrowserConfig,
   type IconUninitializedConfig,
 } from '../entities/index.js';
 import { IconService, HttpProvider } from 'icon-sdk-js';
@@ -35,7 +35,7 @@ describe('Providers', () => {
     });
 
     it('should throw error on invalid config', () => {
-      expect(() => new EvmProvider({} as EvmUninitializedConfig)).toThrow('Invalid configuration');
+      expect(() => new EvmProvider({} as EvmUninitializedBrowserConfig)).toThrow('Invalid configuration');
     });
   });
 
