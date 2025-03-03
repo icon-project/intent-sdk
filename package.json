@@ -1,6 +1,5 @@
 {
   "name": "@iconproject/intents-sdk",
-  "private": "false",
   "version": "1.0.0-rc1",
   "license": "MIT",
   "description": "Icon Project Intents SDK",
