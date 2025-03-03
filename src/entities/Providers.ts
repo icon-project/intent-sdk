@@ -6,6 +6,9 @@ import {
   createWalletClient,
   custom,
   type CustomTransport,
+  type Hex,
+  http,
+  type HttpTransport,
   type PublicClient,
   type WalletClient,
 } from 'viem';
@@ -16,79 +19,129 @@ import type { AddressOrPrivateKeyInit, ChainName, ChainType, HttpPrefixedUrl, Ic
 import { getEvmViemChain } from '../constants.js';
 import {
   isEvmInitializedConfig,
+  isEvmUninitializedBrowserConfig,
   isEvmUninitializedConfig,
+  isEvmUninitializedPrivateKeyConfig,
   isIconInitializedConfig,
   isIconUninitializedConfig,
   isPrivateKeyInit,
 } from '../guards.js';
 import { IconWalletProvider } from '../libs/IconWalletProvider.js';
+import { privateKeyToAccount } from 'viem/accounts';
 
-export type CustomProvider = { request: (...args: unknown[]) => Promise<unknown> };
+export type CustomProvider = {
+  request: (...args: unknown[]) => Promise<unknown>;
+};
 
-export type EvmUninitializedConfig = {
+export type EvmUninitializedBrowserConfig = {
   userAddress: Address;
   chain: ChainName;
   provider: CustomProvider;
 };
 
-export type EvmInitializedConfig = {
-  walletClient: WalletClient<CustomTransport, Chain, Account>;
-  publicClient: PublicClient<CustomTransport>;
+export type EvmUninitializedPrivateKeyConfig = {
+  chain: ChainName;
+  privateKey: Hex | undefined;
+  provider: string; // rpc url
 };
 
+export type EvmInitializedConfig = {
+  walletClient?: WalletClient<CustomTransport | HttpTransport, Chain, Account>;
+  publicClient: PublicClient<CustomTransport | HttpTransport>;
+};
+
+export type EvmUninitializedConfig = EvmUninitializedBrowserConfig | EvmUninitializedPrivateKeyConfig;
+
 export class EvmProvider {
-  public readonly walletClient: WalletClient<CustomTransport, Chain, Account>;
-  public readonly publicClient: PublicClient<CustomTransport>;
+  private readonly _walletClient?: WalletClient<CustomTransport | HttpTransport, Chain, Account>;
+  public readonly publicClient: PublicClient<CustomTransport | HttpTransport>;
 
   constructor(payload: EvmUninitializedConfig | EvmInitializedConfig) {
     if (isEvmUninitializedConfig(payload)) {
-      this.walletClient = createWalletClient({
-        account: payload.userAddress,
-        transport: custom(payload.provider),
-        chain: getEvmViemChain(payload.chain),
-      });
-      this.publicClient = createPublicClient({
-        transport: custom(payload.provider),
-        chain: getEvmViemChain(payload.chain),
-      });
+      if (isEvmUninitializedBrowserConfig(payload)) {
+        this._walletClient = createWalletClient({
+          account: payload.userAddress,
+          transport: custom(payload.provider),
+          chain: getEvmViemChain(payload.chain),
+        });
+        this.publicClient = createPublicClient({
+          transport: custom(payload.provider),
+          chain: getEvmViemChain(payload.chain),
+        });
+      } else if (isEvmUninitializedPrivateKeyConfig(payload)) {
+        if (payload.privateKey) {
+          this._walletClient = createWalletClient({
+            account: privateKeyToAccount(payload.privateKey),
+            transport: http(payload.provider),
+            chain: getEvmViemChain(payload.chain),
+          });
+        }
+        this.publicClient = createPublicClient({
+          transport: http(payload.provider),
+          chain: getEvmViemChain(payload.chain),
+        });
+      } else {
+        throw new Error('Invalid configuration parameters');
+      }
     } else if (isEvmInitializedConfig(payload)) {
-      this.walletClient = payload.walletClient;
+      this._walletClient = payload.walletClient;
       this.publicClient = payload.publicClient;
     } else {
-      throw new Error('Invalid configuration payload passed to EvmProvider');
+      throw new Error('Invalid configuration parameters');
     }
+  }
+
+  get walletClient(): WalletClient<CustomTransport | HttpTransport, Chain, Account> {
+    if (!this._walletClient) {
+      throw new Error('Wallet client not initialized');
+    }
+
+    return this._walletClient;
   }
 }
 
 export type SuiInitializedConfig = {
-  wallet: Wallet;
-  account: WalletAccount;
+  wallet?: Wallet;
+  account?: WalletAccount;
   client: SuiClient;
 };
 
 export class SuiProvider {
-  public readonly wallet: Wallet;
-  public readonly account: WalletAccount;
+  private readonly _wallet?: Wallet;
+  private readonly _account?: WalletAccount;
   public readonly client: SuiClient;
 
   constructor(payload: SuiInitializedConfig) {
-    this.wallet = payload.wallet;
-    this.account = payload.account;
+    this._wallet = payload.wallet;
+    this._account = payload.account;
     this.client = payload.client;
+  }
+
+  get wallet(): Wallet {
+    if (!this._wallet) {
+      throw new Error('[SuiProvider] Wallet not initialized');
+    }
+    return this._wallet;
+  }
+  get account(): WalletAccount {
+    if (!this._account) {
+      throw new Error('[SuiProvider]Account not initialized');
+    }
+    return this._account;
   }
 }
 
 export type IconUninitializedConfig = {
   iconRpcUrl: HttpPrefixedUrl;
   iconDebugRpcUrl: HttpPrefixedUrl;
-  wallet: AddressOrPrivateKeyInit<string, IconEoaAddress>;
+  wallet?: AddressOrPrivateKeyInit<string, IconEoaAddress>;
 };
 
 export type IconInitializedConfig = {
   iconService: IconService; // provide IconService instance or provider url
   iconDebugRpcUrl: HttpPrefixedUrl;
   http: HttpProvider;
-  wallet: IconWallet | IconEoaAddress;
+  wallet?: IconWallet | IconEoaAddress;
 };
 
 export class IconProvider {
@@ -97,9 +150,11 @@ export class IconProvider {
   constructor(payload: IconInitializedConfig | IconUninitializedConfig) {
     if (isIconUninitializedConfig(payload)) {
       this.wallet = new IconWalletProvider(
-        isPrivateKeyInit(payload.wallet)
-          ? IconWallet.loadPrivateKey(payload.wallet.privateKey)
-          : payload.wallet.address,
+        payload.wallet
+          ? isPrivateKeyInit(payload.wallet)
+            ? IconWallet.loadPrivateKey(payload.wallet.privateKey)
+            : payload.wallet.address
+          : undefined,
         new IconService(new HttpProvider(payload.iconRpcUrl)),
         payload.iconDebugRpcUrl,
       );

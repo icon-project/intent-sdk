@@ -3,16 +3,26 @@ import { type IconService, type CallTransaction, type Wallet as IconWallet, Sign
 import { requestJsonRpc } from './HanaWalletConnector.js';
 
 export class IconWalletProvider {
-  private readonly wallet: IconWallet | IconEoaAddress;
+  private readonly _wallet?: IconWallet | IconEoaAddress;
   public readonly iconService: IconService;
   public readonly iconDebugRpcUrl: HttpPrefixedUrl;
 
-  constructor(wallet: IconWallet | IconEoaAddress, iconService: IconService, iconDebugRpcUrl: HttpPrefixedUrl) {
-    this.wallet = wallet;
+  constructor(
+    wallet: IconWallet | IconEoaAddress | undefined,
+    iconService: IconService,
+    iconDebugRpcUrl: HttpPrefixedUrl,
+  ) {
+    this._wallet = wallet;
     this.iconService = iconService;
     this.iconDebugRpcUrl = iconDebugRpcUrl;
   }
 
+  get wallet(): IconWallet | IconEoaAddress {
+    if (!this._wallet) {
+      throw new Error('[IconWalletProvider] Wallet not initialized');
+    }
+    return this._wallet;
+  }
   public async sendTransaction(tx: CallTransaction): Promise<Result<string>> {
     try {
       if (typeof this.wallet === 'string') {
