@@ -46,17 +46,16 @@ export class IntentService {
    *     "token_src_blockchain_id": "0xa4b1.arbitrum",
    *     "token_dst": "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI",
    *     "token_dst_blockchain_id": "sui",
-   *     "src_amount": 10000n
+   *     "amount": 10000n,
+   *     "quote_type": "exact_input"
    * }
    *
    * // response
    * {
    *   "ok": true,
    *   "value": {
-   *      "output": {
-   *        "expected_output":"981301300",
-   *        "uuid":"e2795d2c-14a5-4d18-9be6-a257d7c9d274"
-   *      }
+   *      "quoted_amount":"981301300",
+   *      "uuid":"e2795d2c-14a5-4d18-9be6-a257d7c9d274"
    *   }
    * }
    */

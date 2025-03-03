@@ -9,9 +9,9 @@ import {
   TokenFallbackData,
   bigNumberToHex,
   BigNumberToBigInt,
-} from '../utils/index.js';
+} from '../../utils/index.js';
 import { BigNumber } from 'bignumber.js';
-import type { IconProvider } from '../entities/index.js';
+import type { IconProvider } from '../../entities/index.js';
 import type IconService from 'icon-sdk-js';
 
 global.fetch = vi.fn();

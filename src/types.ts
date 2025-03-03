@@ -76,21 +76,18 @@ export type IntentQuoteRequest = {
   token_src_blockchain_id: string;
   token_dst: string;
   token_dst_blockchain_id: string;
-  src_amount: bigint;
+  amount: bigint;
+  quote_type: QuoteType;
 };
 
 export type IntentQuoteResponseRaw = {
-  output: {
-    expected_output: string;
-    uuid: string;
-  };
+  quoted_amount: string;
+  uuid: string;
 };
 
 export type IntentQuoteResponse = {
-  output: {
-    expected_output: bigint;
-    uuid: string;
-  };
+  quoted_amount: bigint;
+  uuid: string;
 };
 
 export type IntentErrorResponse = {
@@ -176,3 +173,5 @@ export type SuiCoinParamType =
   | { $kind: 'NestedResult'; NestedResult: [number, number] }
   | SuiTransactionResult
   | string;
+
+export type QuoteType = 'exact_input' | 'exact_output';
