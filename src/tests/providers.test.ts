@@ -3,7 +3,7 @@ import {
   EvmProvider,
   IconProvider,
   SuiProvider,
-  type EvmUninitializedConfig,
+  type EvmUninitializedBrowserConfig,
   type IconUninitializedConfig,
 } from '../entities/index.js';
 import { IconService, HttpProvider } from 'icon-sdk-js';
@@ -12,7 +12,7 @@ import type { Wallet, WalletAccount } from '@mysten/wallet-standard';
 
 describe('Providers', () => {
   describe('EvmProvider', () => {
-    it('should initialize with uninitialized config', () => {
+    it('should initialize with uninitialized browser config', () => {
       const provider = new EvmProvider({
         userAddress: '0x601020c5797Cdd34f64476b9bf887a353150Cb9a',
         chain: 'arb',
@@ -23,19 +23,32 @@ describe('Providers', () => {
       expect(provider.publicClient).toBeDefined();
     });
 
-    it('should initialize with uninitialized config', () => {
+    it('should initialize with uninitialized private key config', () => {
       const provider = new EvmProvider({
-        userAddress: '0x601020c5797Cdd34f64476b9bf887a353150Cb9a',
         chain: 'arb',
-        provider: { request: async () => ({}) },
+        privateKey: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+        provider: 'https://arb1.arbitrum.io/rpc',
       });
 
-      expect(provider.walletClient).toBeDefined();
       expect(provider.publicClient).toBeDefined();
+      // walletClient should be initialized with the private key
+      expect(provider.walletClient).toBeDefined();
+    });
+
+    it('should initialize with uninitialized private key config with undefined key', () => {
+      const provider = new EvmProvider({
+        chain: 'arb',
+        privateKey: undefined,
+        provider: 'https://arb1.arbitrum.io/rpc',
+      });
+
+      expect(provider.publicClient).toBeDefined();
+      // Should throw when accessing walletClient since privateKey is undefined
+      expect(() => provider.walletClient).toThrow('Wallet client not initialized');
     });
 
     it('should throw error on invalid config', () => {
-      expect(() => new EvmProvider({} as EvmUninitializedConfig)).toThrow('Invalid configuration');
+      expect(() => new EvmProvider({} as EvmUninitializedBrowserConfig)).toThrow('Invalid configuration');
     });
   });
 

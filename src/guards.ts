@@ -11,7 +11,9 @@ import type {
 } from './types.js';
 import type {
   EvmInitializedConfig,
+  EvmUninitializedBrowserConfig,
   EvmUninitializedConfig,
+  EvmUninitializedPrivateKeyConfig,
   IconInitializedConfig,
   IconUninitializedConfig,
 } from './entities/index.js';
@@ -19,6 +21,16 @@ import type { JsonRpcPayloadResponse, ResponseAddressType, ResponseSigningType }
 
 export function isEvmChainConfig(value: ChainConfig): value is EvmChainConfig {
   return typeof value === 'object' && value.chain.type === 'evm';
+}
+
+export function isEvmUninitializedBrowserConfig(value: EvmUninitializedConfig): value is EvmUninitializedBrowserConfig {
+  return typeof value === 'object' && 'userAddress' in value && 'chain' in value && 'provider' in value;
+}
+
+export function isEvmUninitializedPrivateKeyConfig(
+  value: EvmUninitializedConfig,
+): value is EvmUninitializedPrivateKeyConfig {
+  return typeof value === 'object' && 'chain' in value && 'privateKey' in value;
 }
 
 export function isSuiChainConfig(value: ChainConfig): value is SuiChainConfig {
@@ -32,7 +44,7 @@ export function isIconChainConfig(value: ChainConfig): value is IconChainConfig 
 export function isEvmUninitializedConfig(
   value: EvmUninitializedConfig | EvmInitializedConfig,
 ): value is EvmUninitializedConfig {
-  return typeof value === 'object' && 'userAddress' in value && 'chain' in value;
+  return typeof value === 'object' && 'chain' in value;
 }
 
 export function isEvmInitializedConfig(
