@@ -5,7 +5,7 @@ import {
   SuiProvider,
   type EvmUninitializedBrowserConfig,
   type IconUninitializedConfig,
-} from '../entities/index.js';
+} from '../../entities/index.js';
 import { IconService, HttpProvider } from 'icon-sdk-js';
 import type { SuiClient } from '@mysten/sui/client';
 import type { Wallet, WalletAccount } from '@mysten/wallet-standard';

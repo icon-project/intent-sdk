@@ -25,7 +25,7 @@ export class SolverApiService {
     invariant(payload.token_src_blockchain_id.length > 0, 'Empty token_src_blockchain_id');
     invariant(payload.token_dst.length > 0, 'Empty token_dst');
     invariant(payload.token_dst_blockchain_id.length > 0, 'Empty token_dst_blockchain_id');
-    invariant(payload.src_amount > 0n, 'src_amount must be greater than 0');
+    invariant(payload.amount > 0n, 'amount must be greater than 0');
 
     try {
       const response = await fetch(`${config.solverApiEndpoint}/quote`, {
@@ -38,7 +38,8 @@ export class SolverApiService {
           token_src_blockchain_id: payload.token_src_blockchain_id,
           token_dst: payload.token_dst,
           token_dst_blockchain_id: payload.token_dst_blockchain_id,
-          src_amount: payload.src_amount.toString(),
+          amount: payload.amount.toString(),
+          quote_type: payload.quote_type,
         }),
       });
 
@@ -54,10 +55,8 @@ export class SolverApiService {
       return {
         ok: true,
         value: {
-          output: {
-            expected_output: BigInt(quoteResponse.output.expected_output),
-            uuid: quoteResponse.output.uuid,
-          },
+          quoted_amount: BigInt(quoteResponse.quoted_amount),
+          uuid: quoteResponse.uuid,
         } satisfies IntentQuoteResponse,
       };
     } catch (e: unknown) {

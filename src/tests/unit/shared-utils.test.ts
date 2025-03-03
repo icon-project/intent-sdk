@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidHex, bigNumberToHex } from '../utils/index.js';
+import { isValidHex, bigNumberToHex } from '../../utils/index.js';
 import { BigNumber } from 'bignumber.js';
 
 describe('shared-utils', () => {
