@@ -1,9 +1,10 @@
 {
   "name": "@iconproject/intents-sdk",
+  "private": "false",
   "version": "1.0.0-rc1",
   "license": "MIT",
   "description": "Icon Project Intents SDK",
-  "keywords": ["intents-sdk"],
+  "keywords": ["intents", "sdk", "icon", "swap"],
   "homepage": "https://github.com/icon-project/intent-sdk",
   "bugs": {
     "url": "https://github.com/icon-project/intent-sdk/issues"
