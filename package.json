@@ -1,6 +1,6 @@
 {
   "name": "@iconproject/intents-sdk",
-  "version": "1.0.0",
+  "version": "1.0.0-rc1",
   "license": "MIT",
   "description": "Icon Project Intents SDK",
   "keywords": ["intents-sdk"],
@@ -16,6 +16,7 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
+    "test:e2e": "vitest --config ./src/vitest.e2e.config.ts",
     "dev": "vitest",
     "ci": "npm run pretty && npm run build && npm run check-exports && npm run test",
     "pretty": "biome format . --write",

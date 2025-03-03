@@ -84,6 +84,10 @@ const chainConfigs: Map<ChainName, ChainConfig> = new Map(
 Requesting a quote should require you to just consume user input amount and converting it to the appropriate token amount (scaled by token decimals).
 All the required configurations (chain id [nid], token decimals and address) should be loaded as described in [Load SDK Config](#load-sdk-config).
 
+Quoting API supports different types of quotes:
+- "exact_input": "amount" parameter is the amount the user want's to swap (e.g. the user is asking for a quote to swap 1 WETH to xxx SUI)
+- "exact_output": "amount" parameter is the final amount the user wants. (e.g. the user want's to swap WETH for SUI, but is asking how many WETH is going to cost to have 1 SUI)
+
 ```typescript
 import { IntentService } from "@iconproject/intents-sdk"
 
@@ -92,11 +96,12 @@ const intentService = new IntentService({
 })
 
 const quoteResult = await intentService.getQuote({
-  token_src: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+  token_src: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1", // WETH
   token_src_blockchain_id: "0xa4b1.arbitrum",
-  token_dst: "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI",
+  token_dst: "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI", // native SUI
   token_dst_blockchain_id: "sui",
-  src_amount: 100000000000000000n,
+  amount: 1000000000000000000n,
+  quote_type: "exact_input" // the user is asking for a quote to swap 1 WETH to xxx SUI
 })
 
 /**
@@ -104,11 +109,9 @@ const quoteResult = await intentService.getQuote({
  * {
  *   "ok": true,
  *   "value": {
- *      "output": {
  *        "expected_output":"1000000000000", // to be used in create intent order as toAmount
  *        "uuid":"e2795d2c-14a5-4d18-9be6-a257d7c9d274" // to be used in create intent order as quote_uuid
  *      }
- *   }
  * }
  */
 ```
