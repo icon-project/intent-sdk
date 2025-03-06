@@ -59,6 +59,12 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
         decimals: 18,
         address: '0x6c84a8f1c29108F47a79964b5Fe888D4f4D0dE40',
       },
+      {
+        symbol: 'USDC',
+        name: 'USD Coin (USDC)',
+        decimals: 6,
+        address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
+      }
     ],
   } satisfies EvmChainConfig,
   ['pol']: {
@@ -99,6 +105,12 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
         name: 'Wrapped Polygon Ecosystem Token',
         decimals: 18,
         address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+      },
+      {
+        symbol: 'USDC',
+        name: 'USD Coin (USDC)',
+        decimals: 6,
+        address: '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359',
       },
     ],
   } satisfies EvmChainConfig,
@@ -142,6 +154,12 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
         decimals: 9,
         address: '0x922d15d7f55c13fd790f6e54397470ec592caa2b508df292a2e8553f3d3b274f::msui::MSUI',
       },
+      {
+        symbol: 'USDC',
+        name: 'USD Coin (USDC)',
+        decimals: 6,
+        address: '0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC',
+      },
     ],
   } satisfies SuiChainConfig,
   ['icon']: {
@@ -183,6 +201,24 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
         name: 'Balance Token',
         decimals: 18,
         address: 'cxf61cd5a45dc9f91c15aa65831a30a90d59a09619',
+      },
+      {
+        symbol: 'USDC',
+        name: 'USD Coin (USDC)',
+        decimals: 6,
+        address: 'cx22319ac7f412f53eabe3c9827acf5e27e9c6a95f',
+      },
+      {
+        symbol: 'ETH',
+        name: 'Ethereum',
+        decimals: 18,
+        address: 'cx288d13e1b63563459a2ac6179f237711f6851cb5',
+      },
+      {
+        symbol: 'SUI',
+        name: 'Sui',
+        decimals: 9,
+        address: 'cx508002ec116fbf3ab406329c0df28e70d7e75fb3',
       },
     ],
   } satisfies IconChainConfig,
