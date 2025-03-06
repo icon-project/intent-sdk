@@ -57,9 +57,9 @@ export function uintToBytes(x: bigint): Uint8Array {
   }
   if (x < right) {
     return rlpEncode(x);
+  } else {
+    const data = rlpEncode(x);
+    data[0] = 0;
+    return data;
   }
-
-  const data = rlpEncode(x);
-  data[0] = 0;
-  return data;
 }

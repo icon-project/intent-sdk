@@ -8,6 +8,7 @@ import type {
   WalletAddressHolder,
   IconTransactionEventLogs,
   IconEventLog,
+  IconEoaAddress,
 } from './types.js';
 import type {
   EvmInitializedConfig,
@@ -68,6 +69,11 @@ export function isIconInitializedConfig(
 export function isIconAddress(value: unknown): value is IconAddress {
   return typeof value === 'string' && /^hx[a-f0-9]{40}$|^cx[a-f0-9]{40}$/.test(value);
 }
+
+export function isIconEoaAddress(value: unknown): value is IconEoaAddress {
+  return typeof value === 'string' && /^hx[a-f0-9]{40}$/.test(value);
+}
+
 export function isResponseAddressType(value: unknown): value is ResponseAddressType {
   return (
     typeof value === 'object' &&
@@ -75,7 +81,7 @@ export function isResponseAddressType(value: unknown): value is ResponseAddressT
     'type' in value &&
     'payload' in value &&
     value.type === 'RESPONSE_ADDRESS' &&
-    isIconAddress(value.payload)
+    isIconEoaAddress(value.payload)
   );
 }
 

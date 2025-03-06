@@ -9,10 +9,52 @@ import {
   TokenFallbackData,
   waitForTransaction,
 } from '../utils/index.js';
+import type IconService from 'icon-sdk-js';
 import { BigNumber } from 'bignumber.js';
 
 export class IconIntentService {
   private constructor() {}
+
+  private static constructIntentOrderTx(
+    payload: CreateIntentOrderPayload,
+    fromChainConfig: IconChainConfig,
+    toChainConfig: ChainConfig,
+  ): IconService.CallTransaction {
+    const intent = new SwapOrder(
+      0n,
+      fromChainConfig.intentContract,
+      fromChainConfig.nid,
+      toChainConfig.nid,
+      payload.fromAddress,
+      payload.toAddress,
+      payload.token,
+      payload.amount,
+      payload.toToken,
+      payload.toAmount,
+      stringToBytes(
+        JSON.stringify({
+          quote_uuid: payload.quote_uuid,
+        }),
+      ),
+    );
+    const fallbackData = TokenFallbackData.forSwap(intent.toICONBytes());
+    const isNative =
+      payload.token.toLowerCase() ===
+        fromChainConfig.supportedTokens.find(token => token.symbol === 'ICX')?.address.toLowerCase() ||
+      payload.token.toLowerCase() === fromChainConfig.nativeToken.toLowerCase();
+
+    return buildTransaction(
+      payload.fromAddress,
+      isNative ? fromChainConfig.wrappedNativeToken : intent.token,
+      'transfer',
+      {
+        _to: fromChainConfig.intentContract,
+        _value: IconConverter.toHex(Number(intent.amount)),
+        _data: fallbackData.toHex(),
+      },
+      isNative ? new BigNumber(intent.amount.toString()) : undefined,
+    );
+  }
 
   /**
    * Create Icon intent order
@@ -28,39 +70,7 @@ export class IconIntentService {
     provider: IconProvider,
   ): Promise<Result<string>> {
     try {
-      const intent = new SwapOrder(
-        0n,
-        fromChainConfig.intentContract,
-        fromChainConfig.nid,
-        toChainConfig.nid,
-        payload.fromAddress,
-        payload.toAddress,
-        payload.token,
-        payload.amount,
-        payload.toToken,
-        payload.toAmount,
-        stringToBytes(
-          JSON.stringify({
-            quote_uuid: payload.quote_uuid,
-          }),
-        ),
-      );
-      const fallbackData = TokenFallbackData.forSwap(intent.toICONBytes());
-      const isNative =
-        payload.token.toLowerCase() ===
-          fromChainConfig.supportedTokens.find(token => token.symbol === 'ICX')?.address.toLowerCase() ||
-        payload.token.toLowerCase() === fromChainConfig.nativeToken.toLowerCase();
-      const transaction = buildTransaction(
-        payload.fromAddress,
-        intent.toToken,
-        'transfer',
-        {
-          _to: payload.toAddress,
-          _value: IconConverter.toHex(Number(intent.toAmount)),
-          _data: fallbackData.toHex(),
-        },
-        isNative ? new BigNumber(intent.amount.toString()) : undefined,
-      );
+      const transaction = IconIntentService.constructIntentOrderTx(payload, fromChainConfig, toChainConfig);
 
       const estimatedTx = await estimateAndApplyStepCost(transaction, provider);
       return provider.wallet.sendTransaction(estimatedTx);
