@@ -1,6 +1,6 @@
 import type { HttpPrefixedUrl, IconEoaAddress, Result } from '../types.js';
 import { type IconService, type CallTransaction, type Wallet as IconWallet, SignedTransaction } from 'icon-sdk-js';
-import { requestJsonRpc } from './HanaWalletConnector.js';
+import { HanaWalletConnector } from './HanaWalletConnector.js';
 
 export class IconWalletProvider {
   private readonly _wallet?: IconWallet | IconEoaAddress;
@@ -27,7 +27,7 @@ export class IconWalletProvider {
     try {
       if (typeof this.wallet === 'string') {
         // if wallet is typeof string (address) - we prompt Icon wallet for signing and sending
-        const result = await requestJsonRpc(tx);
+        const result = await HanaWalletConnector.requestJsonRpc(tx);
 
         if (!result.ok) {
           return result;

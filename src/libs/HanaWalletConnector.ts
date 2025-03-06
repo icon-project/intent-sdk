@@ -1,5 +1,5 @@
 import { isJsonRpcPayloadResponse, isResponseAddressType, isResponseSigningType } from '../index.js';
-import type { IconAddress, Result } from '../types.js';
+import type { IconAddress, IconEoaAddress, Result } from '../types.js';
 
 export type IconJsonRpcVersion = '2.0';
 export type HanaWalletRequestEvent =
@@ -20,7 +20,7 @@ export type HanaWalletResponseEvent =
 
 export type ResponseAddressType = {
   type: 'RESPONSE_ADDRESS';
-  payload: IconAddress;
+  payload: IconEoaAddress;
 };
 
 export type ResponseSigningType = {
@@ -56,105 +56,109 @@ interface RelayResponseEventDetail {
   payload: unknown;
 }
 
-export function requestAddress(): Promise<Result<IconAddress>> {
-  return new Promise(resolve => {
-    const eventHandler = (event: Event) => {
-      const customEvent = event as CustomEvent<RelayResponseEventDetail>;
-      const response = customEvent.detail;
-      if (isResponseAddressType(response)) {
-        window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
-        resolve({
-          ok: true,
-          value: response.payload,
-        });
-      }
-    };
+export class HanaWalletConnector {
+  private constructor() {}
 
-    window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler, false);
-    window.addEventListener('ICONEX_RELAY_RESPONSE', eventHandler, false);
-    window.dispatchEvent(
-      new CustomEvent<RelayRequestDetail>('ICONEX_RELAY_REQUEST', {
-        detail: {
-          type: 'REQUEST_ADDRESS',
-        },
-      }),
-    );
-  });
-}
-
-export function requestSigning(from: IconAddress, hash: string): Promise<Result<string>> {
-  return new Promise((resolve, reject) => {
-    const signRequest = new CustomEvent<RelayRequestSigning>('ICONEX_RELAY_REQUEST', {
-      detail: {
-        type: 'REQUEST_SIGNING',
-        payload: {
-          from,
-          hash,
-        },
-      },
-    });
-
-    const eventHandler = (event: Event) => {
-      const customEvent = event as CustomEvent<RelayResponseEventDetail>;
-      const response = customEvent.detail;
-      if (isResponseSigningType(response)) {
-        window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
-
-        // resolve signature
-        resolve({
-          ok: true,
-          value: response.payload,
-        });
-      } else if (response.type === 'CANCEL_SIGNING') {
-        reject(new Error('CANCEL_SIGNING'));
-      }
-    };
-
-    window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
-    window.addEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
-    window.dispatchEvent(signRequest);
-  });
-}
-
-export function requestJsonRpc<T = unknown>(
-  rawTransaction: unknown,
-  id = 99999,
-): Promise<Result<JsonRpcPayloadResponse>> {
-  return new Promise((resolve, reject) => {
-    const eventHandler = (event: Event) => {
-      const customEvent = event as CustomEvent<RelayResponseEventDetail>;
-      const { type, payload } = customEvent.detail;
-      if (type === 'RESPONSE_JSON-RPC') {
-        window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
-
-        if (isJsonRpcPayloadResponse(payload)) {
+  public static requestAddress(): Promise<Result<IconEoaAddress>> {
+    return new Promise(resolve => {
+      const eventHandler = (event: Event) => {
+        const customEvent = event as CustomEvent<RelayResponseEventDetail>;
+        const response = customEvent.detail;
+        if (isResponseAddressType(response)) {
+          window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
           resolve({
             ok: true,
-            value: payload,
+            value: response.payload,
           });
-        } else {
-          reject(new Error('Invalid payload response type (expected JsonRpcPayloadResponse)'));
         }
-      } else if (type === 'CANCEL_JSON-RPC') {
-        window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
-        reject(new Error('CANCEL_JSON-RPC'));
-      }
-    };
+      };
 
-    window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
-    window.addEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
-    window.dispatchEvent(
-      new CustomEvent<RelayRequestDetail>('ICONEX_RELAY_REQUEST', {
+      window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler, false);
+      window.addEventListener('ICONEX_RELAY_RESPONSE', eventHandler, false);
+      window.dispatchEvent(
+        new CustomEvent<RelayRequestDetail>('ICONEX_RELAY_REQUEST', {
+          detail: {
+            type: 'REQUEST_ADDRESS',
+          },
+        }),
+      );
+    });
+  }
+
+  public static requestSigning(from: IconAddress, hash: string): Promise<Result<string>> {
+    return new Promise((resolve, reject) => {
+      const signRequest = new CustomEvent<RelayRequestSigning>('ICONEX_RELAY_REQUEST', {
         detail: {
-          type: 'REQUEST_JSON-RPC',
+          type: 'REQUEST_SIGNING',
           payload: {
-            jsonrpc: '2.0',
-            method: 'icx_sendTransaction',
-            params: rawTransaction,
-            id: id,
+            from,
+            hash,
           },
         },
-      }),
-    );
-  });
+      });
+
+      const eventHandler = (event: Event) => {
+        const customEvent = event as CustomEvent<RelayResponseEventDetail>;
+        const response = customEvent.detail;
+        if (isResponseSigningType(response)) {
+          window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
+
+          // resolve signature
+          resolve({
+            ok: true,
+            value: response.payload,
+          });
+        } else if (response.type === 'CANCEL_SIGNING') {
+          reject(new Error('CANCEL_SIGNING'));
+        }
+      };
+
+      window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
+      window.addEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
+      window.dispatchEvent(signRequest);
+    });
+  }
+
+  public static requestJsonRpc<T = unknown>(
+    rawTransaction: unknown,
+    id = 99999,
+  ): Promise<Result<JsonRpcPayloadResponse>> {
+    return new Promise((resolve, reject) => {
+      const eventHandler = (event: Event) => {
+        const customEvent = event as CustomEvent<RelayResponseEventDetail>;
+        const { type, payload } = customEvent.detail;
+        if (type === 'RESPONSE_JSON-RPC') {
+          window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
+
+          if (isJsonRpcPayloadResponse(payload)) {
+            resolve({
+              ok: true,
+              value: payload,
+            });
+          } else {
+            reject(new Error('Invalid payload response type (expected JsonRpcPayloadResponse)'));
+          }
+        } else if (type === 'CANCEL_JSON-RPC') {
+          window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
+          reject(new Error('CANCEL_JSON-RPC'));
+        }
+      };
+
+      window.removeEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
+      window.addEventListener('ICONEX_RELAY_RESPONSE', eventHandler as EventListener, false);
+      window.dispatchEvent(
+        new CustomEvent<RelayRequestDetail>('ICONEX_RELAY_REQUEST', {
+          detail: {
+            type: 'REQUEST_JSON-RPC',
+            payload: {
+              jsonrpc: '2.0',
+              method: 'icx_sendTransaction',
+              params: rawTransaction,
+              id: id,
+            },
+          },
+        }),
+      );
+    });
+  }
 }

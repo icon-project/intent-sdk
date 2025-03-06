@@ -109,13 +109,16 @@ export function buildTransaction(
     .nid('0x1')
     .nonce('0x1')
     .version('0x3')
-    .timestamp(new Date().getTime() * 1000)
+    .timestamp(Converter.toHex(new Date().getTime() * 1000))
     .stepLimit(bigNumberToHex(new BigNumber('20000000'))) // should be overriden by estimateStepCost
     .build();
 }
 
 export async function estimateStepCost(tx: unknown, provider: IconProvider): Promise<BigNumber | undefined> {
   try {
+    const rawTx = Converter.toRawTransaction(tx);
+    delete rawTx['stepLimit'];
+
     const response = await fetch(provider.wallet.iconDebugRpcUrl, {
       method: 'POST',
       headers: {
@@ -125,7 +128,7 @@ export async function estimateStepCost(tx: unknown, provider: IconProvider): Pro
         jsonrpc: '2.0',
         method: 'debug_estimateStep',
         id: 1234,
-        params: Converter.toRawTransaction(tx),
+        params: rawTx,
       }),
     });
 

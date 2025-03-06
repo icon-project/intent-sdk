@@ -57,6 +57,7 @@ export type SuiChainConfig = BaseChainConfig<'sui'> & {
 export type IconChainConfig = BaseChainConfig<'icon'> & {
   intentContract: IconSmartContractAddress;
   nativeToken: IconSmartContractAddress;
+  wrappedNativeToken: IconSmartContractAddress;
 };
 
 export type ChainConfig = EvmChainConfig | SuiChainConfig | IconChainConfig;
@@ -65,7 +66,9 @@ export type GetChainConfigType<T extends ChainName> = T extends 'sui'
   ? SuiChainConfig
   : T extends 'arb' | 'pol'
     ? EvmChainConfig
-    : never;
+    : T extends 'icon'
+      ? IconChainConfig
+      : never;
 
 export type Result<T, E = Error | unknown> = { ok: true; value: T } | { ok: false; error: E };
 
