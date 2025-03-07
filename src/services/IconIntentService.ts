@@ -20,6 +20,9 @@ export class IconIntentService {
     fromChainConfig: IconChainConfig,
     toChainConfig: ChainConfig,
   ): IconService.CallTransaction {
+    // check if ICX/WICX is being sent
+    const isNative = payload.token.toLowerCase() === fromChainConfig.nativeToken.toLowerCase();
+
     const intent = new SwapOrder(
       0n,
       fromChainConfig.intentContract,
@@ -38,14 +41,10 @@ export class IconIntentService {
       ),
     );
     const fallbackData = TokenFallbackData.forSwap(intent.toICONBytes());
-    const isNative =
-      payload.token.toLowerCase() ===
-        fromChainConfig.supportedTokens.find(token => token.symbol === 'ICX')?.address.toLowerCase() ||
-      payload.token.toLowerCase() === fromChainConfig.nativeToken.toLowerCase();
 
     return buildTransaction(
       payload.fromAddress,
-      isNative ? fromChainConfig.wrappedNativeToken : intent.token,
+      isNative ? fromChainConfig.nativeToken : intent.token,
       'transfer',
       {
         _to: fromChainConfig.intentContract,
