@@ -57,7 +57,6 @@ export type SuiChainConfig = BaseChainConfig<'sui'> & {
 export type IconChainConfig = BaseChainConfig<'icon'> & {
   intentContract: IconSmartContractAddress;
   nativeToken: IconSmartContractAddress;
-  wrappedNativeToken: IconSmartContractAddress;
 };
 
 export type ChainConfig = EvmChainConfig | SuiChainConfig | IconChainConfig;

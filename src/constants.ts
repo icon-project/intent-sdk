@@ -64,7 +64,7 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
         name: 'USD Coin (USDC)',
         decimals: 6,
         address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
-      }
+      },
     ],
   } satisfies EvmChainConfig,
   ['pol']: {
@@ -169,14 +169,13 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
     },
     nid: '0x1.icon',
     intentContract: 'cx55f6ac86d82a14022c338c8c0033eeceeeab382d',
-    nativeToken: 'cx0000000000000000000000000000000000000000',
-    wrappedNativeToken: 'cx3975b43d260fb8ec802cef6e60c2f4d07486f11d',
+    nativeToken: 'cx3975b43d260fb8ec802cef6e60c2f4d07486f11d',
     supportedTokens: [
       {
         symbol: 'ICX',
         name: 'ICX',
         decimals: 18,
-        address: 'cx0000000000000000000000000000000000000000',
+        address: 'cx3975b43d260fb8ec802cef6e60c2f4d07486f11d',
       },
       {
         symbol: 'wICX',

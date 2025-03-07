@@ -35,19 +35,16 @@ describe('e2e', () => {
       quote_type: 'exact_input',
     });
 
-    expect(quoteResult.ok).toBe(true);
-
     if (quoteResult.ok) {
       const value: IntentQuoteResponse = quoteResult.value;
       expect(value.quoted_amount).toBeGreaterThan(0n);
       expect(value.uuid).toBeDefined();
     } else {
+      console.error(quoteResult.error);
       throw new Error('Failed to get quote');
     }
 
-    console.log(quoteResult);
-
-    expect(true).toBe(true);
+    expect(quoteResult.ok).toBe(true);
   });
 
   it('Test Icon bnUSD to Polygon POL quote', async () => {

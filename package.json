@@ -15,8 +15,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "vitest run",
-    "test:e2e": "vitest --config ./src/vitest.e2e.config.ts",
+    "test": "vitest --config ./src/vitest.config.ts --watch=false",
+    "test:e2e": "vitest --config ./src/vitest.e2e.config.ts --watch=false",
     "dev": "vitest",
     "ci": "npm run pretty && npm run build && npm run check-exports && npm run test",
     "pretty": "biome format . --write",
