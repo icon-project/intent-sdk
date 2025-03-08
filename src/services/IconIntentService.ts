@@ -21,7 +21,9 @@ export class IconIntentService {
     toChainConfig: ChainConfig,
   ): IconService.CallTransaction {
     // check if ICX/WICX is being sent
-    const isNative = payload.token.toLowerCase() === fromChainConfig.nativeToken.toLowerCase();
+    const token = payload.token.toLowerCase();
+    const isNative =
+      token === fromChainConfig.nativeToken.toLowerCase() || token === 'cx0000000000000000000000000000000000000000';
 
     const intent = new SwapOrder(
       0n,
