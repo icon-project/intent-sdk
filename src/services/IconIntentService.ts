@@ -3,6 +3,7 @@ import { SwapOrder, type IconProvider } from '../entities/index.js';
 import type { CreateIntentOrderPayload, IconChainConfig, Result, ChainConfig } from '../types.js';
 import { Converter as IconConverter } from 'icon-sdk-js';
 import {
+  BigIntToHex,
   buildTransaction,
   estimateAndApplyStepCost,
   parseSwapOrder,
@@ -10,12 +11,11 @@ import {
   waitForTransaction,
 } from '../utils/index.js';
 import type IconService from 'icon-sdk-js';
-import { BigNumber } from 'bignumber.js';
 
 export class IconIntentService {
   private constructor() {}
 
-  private static constructIntentOrderTx(
+  public static constructIntentOrderTx(
     payload: CreateIntentOrderPayload,
     fromChainConfig: IconChainConfig,
     toChainConfig: ChainConfig,
@@ -50,10 +50,10 @@ export class IconIntentService {
       'transfer',
       {
         _to: fromChainConfig.intentContract,
-        _value: IconConverter.toHex(Number(intent.amount)),
+        _value: BigIntToHex(intent.amount),
         _data: fallbackData.toHex(),
       },
-      isNative ? new BigNumber(intent.amount.toString()) : undefined,
+      isNative ? BigIntToHex(intent.amount) : undefined,
     );
   }
 

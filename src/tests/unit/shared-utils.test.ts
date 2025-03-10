@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidHex, bigNumberToHex } from '../../utils/index.js';
+import { isValidHex, bigNumberToHex, BigIntToHex } from '../../utils/index.js';
 import { BigNumber } from 'bignumber.js';
 
 describe('shared-utils', () => {
@@ -36,6 +36,34 @@ describe('shared-utils', () => {
     });
   });
 
+  describe('bigIntToHex', () => {
+    it('should convert bigint to hex string with 0x prefix', () => {
+      const testCases = [
+        { input: 255n, expected: '0xff' },
+        { input: 16n, expected: '0x10' },
+        { input: 1000n, expected: '0x3e8' },
+        { input: 0n, expected: '0x0' },
+        { input: 1234567890n, expected: '0x499602d2' },
+        { input: 1n, expected: '0x1' },
+        { input: 15n, expected: '0xf' },
+        { input: 256n, expected: '0x100' },
+        // Large numbers
+        { input: 1000000000000000000n, expected: '0xde0b6b3a7640000' },
+        { input: 2128373588457215744n, expected: '0x1d8980808950d700' },
+        { input: 3786633557917726208n, expected: '0x348cd32892427600' },
+        {
+          input: 11579208923731619542357098500868790785326998466564056403945758400791n,
+          expected: '0x6df37f675ef6eadf5ab9a2072d44268d97df837e6748956e5c6c2117',
+        },
+      ];
+
+      testCases.forEach(({ input, expected }) => {
+        const result = BigIntToHex(input);
+        expect(result.toLowerCase()).toBe(expected);
+      });
+    });
+  });
+
   describe('bigNumberToHex', () => {
     it('should convert BigNumber to hex string with 0x prefix', () => {
       const testCases = [
@@ -49,6 +77,12 @@ describe('shared-utils', () => {
         { input: new BigNumber('256'), expected: '0x100' },
         { input: new BigNumber('4095'), expected: '0xfff' },
         { input: new BigNumber('4096'), expected: '0x1000' },
+        { input: new BigNumber('2128373588457215744'), expected: '0x1d8980808950d700' },
+        { input: new BigNumber('3786633557917726208'), expected: '0x348cd32892427600' },
+        {
+          input: new BigNumber('11579208923731619542357098500868790785326998466564056403945758400791'),
+          expected: '0x6df37f675ef6eadf5ab9a2072d44268d97df837e6748956e5c6c2117',
+        },
       ];
 
       testCases.forEach(({ input, expected }) => {
