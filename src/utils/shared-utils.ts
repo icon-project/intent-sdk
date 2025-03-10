@@ -35,6 +35,10 @@ export function bigNumberToHex(value: BigNumber): string {
   return `0x${integerPart.toString(16)}`;
 }
 
+export function BigIntToHex(value: bigint): string {
+  return `0x${value.toString(16)}`;
+}
+
 export function lastBytesOf(x: bigint, i: number): Uint8Array {
   const buffer = new ArrayBuffer(i);
   const view = new DataView(buffer);

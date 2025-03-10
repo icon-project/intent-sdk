@@ -98,14 +98,14 @@ export function buildTransaction(
   to: string,
   method: string,
   params: unknown,
-  amount?: BigNumber,
+  amount?: string,
 ): IconService.CallTransaction {
   return new CallTransactionBuilder()
     .from(from)
     .to(to)
     .method(method)
     .params(params)
-    .value(amount ? bigNumberToHex(amount) : 0)
+    .value(amount ?? 0)
     .nid('0x1')
     .nonce('0x1')
     .version('0x3')
@@ -173,6 +173,10 @@ export function BigNumberToBigInt(bigNumber: BigNumber): bigint {
     throw new Error('Cannot convert decimal number to BigInt');
   }
   return BigInt(bigNumber.toFixed(0));
+}
+
+export function BigIntToBigNumber(value: bigint): BigNumber {
+  return new BigNumber(value.toString());
 }
 
 export class TokenFallbackData {

@@ -9,6 +9,8 @@ import {
   TokenFallbackData,
   bigNumberToHex,
   BigNumberToBigInt,
+  BigIntToBigNumber,
+  BigIntToHex,
 } from '../../utils/index.js';
 import { BigNumber } from 'bignumber.js';
 import type { IconProvider } from '../../entities/index.js';
@@ -137,13 +139,7 @@ describe('icon-utils', () => {
 
   describe('buildTransaction', () => {
     it('should build a transaction with correct parameters', () => {
-      const tx = buildTransaction(
-        'fromAddress',
-        'toAddress',
-        'methodName',
-        { param1: 'value1' },
-        new BigNumber('1000'),
-      );
+      const tx = buildTransaction('fromAddress', 'toAddress', 'methodName', { param1: 'value1' }, BigIntToHex(1000n));
 
       expect(tx.from).toBe('fromAddress');
       expect(tx.to).toBe('toAddress');
@@ -241,6 +237,14 @@ describe('icon-utils', () => {
       const fillHex = fillData.toHex();
       expect(fillHex).toMatch(/^0x[0-9a-f]+$/i);
       expect(fillHex).not.toBe(hex); // Should be different due to different type and solver
+    });
+  });
+
+  describe('BigIntToBigNumber', () => {
+    it('should convert BigInt to BigNumber', () => {
+      const bigInt = 11579208923731619542357098500868790785326998466564056403945758400791n;
+      const bigNumber = BigIntToBigNumber(bigInt);
+      expect(bigNumber.toFixed()).toBe('11579208923731619542357098500868790785326998466564056403945758400791');
     });
   });
 
