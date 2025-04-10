@@ -28,7 +28,11 @@ import {
 } from '../guards.js';
 import { IconWalletProvider } from '../libs/IconWalletProvider.js';
 import { privateKeyToAccount } from 'viem/accounts';
-
+import * as StellarSdk from '@stellar/stellar-sdk';
+import {
+  type StellarProviderType,
+  StellarWalletProvider, type StellarWalletType
+} from "../libs/StellarWalletProvider.js";
 export type CustomProvider = {
   request: (...args: unknown[]) => Promise<unknown>;
 };
@@ -166,7 +170,55 @@ export class IconProvider {
   }
 }
 
-export type ChainProviderType = EvmProvider | SuiProvider | IconProvider;
+export type StellarUninitializedConfig = {
+  sorobanUrl: HttpPrefixedUrl;
+  networkPassphrase: string;
+  wallet?: StellarWalletType;
+  provider: StellarProviderType;
+};
+
+export type StellarInitializedConfig = {
+  server: StellarSdk.SorobanRpc.Server;
+  networkPassphrase: string;
+  wallet?: StellarWalletType;
+};
+
+export class StellarProvider {
+  public readonly wallet: StellarWalletProvider;
+  public readonly server: StellarSdk.SorobanRpc.Server;
+  public readonly networkPassphrase: string;
+
+  constructor(payload: StellarUninitializedConfig | StellarInitializedConfig) {
+    if ('sorobanUrl' in payload) {
+      this.server = new StellarSdk.SorobanRpc.Server(payload.sorobanUrl);
+      this.networkPassphrase = payload.networkPassphrase;
+      this.wallet = new StellarWalletProvider(
+          payload.wallet,
+          this.server,
+          this.networkPassphrase,
+          payload.provider
+      );
+    } else {
+      this.server = payload.server;
+      this.networkPassphrase = payload.networkPassphrase;
+      if (payload.wallet) {
+        this.wallet = new StellarWalletProvider(
+            payload.wallet,
+            this.server,
+            this.networkPassphrase
+        );
+      } else {
+        this.wallet = new StellarWalletProvider(
+            undefined,
+            this.server,
+            this.networkPassphrase
+        );
+      }
+    }
+  }
+}
+
+export type ChainProviderType = EvmProvider | SuiProvider | IconProvider | StellarProviderType;
 
 export type ChainProvider<T extends ChainType | undefined = undefined> = T extends 'evm'
   ? EvmProvider
@@ -174,7 +226,9 @@ export type ChainProvider<T extends ChainType | undefined = undefined> = T exten
     ? SuiProvider
     : T extends 'icon'
       ? IconProvider
-      : never;
+        : T extends 'stellar'
+            ? StellarProvider
+            : never;
 
 export type GetChainProviderType<T extends ChainName> = T extends 'arb' | 'pol'
   ? ChainProvider<'evm'>
@@ -182,6 +236,8 @@ export type GetChainProviderType<T extends ChainName> = T extends 'arb' | 'pol'
     ? ChainProvider<'sui'>
     : T extends 'icon'
       ? ChainProvider<'icon'>
+        : T extends 'stellar'
+            ? ChainProvider<'stellar'>
       : never;
 
 export type NonEmptyChainProviders = [ChainProvider, ...ChainProvider[]];

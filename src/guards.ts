@@ -9,6 +9,7 @@ import type {
   IconTransactionEventLogs,
   IconEventLog,
   IconEoaAddress,
+  StellarChainConfig,
 } from './types.js';
 import type {
   EvmInitializedConfig,
@@ -36,6 +37,10 @@ export function isEvmUninitializedPrivateKeyConfig(
 
 export function isSuiChainConfig(value: ChainConfig): value is SuiChainConfig {
   return typeof value === 'object' && value.chain.type === 'sui';
+}
+
+export function isStellarChainConfig(value: ChainConfig): value is StellarChainConfig {
+  return typeof value === 'object' && value.chain.type === 'stellar';
 }
 
 export function isIconChainConfig(value: ChainConfig): value is IconChainConfig {
