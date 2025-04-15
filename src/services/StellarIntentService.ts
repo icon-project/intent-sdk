@@ -11,9 +11,10 @@ import {
     xdr,
     Address,
     nativeToScVal,
-    Operation, scValToNative, Networks, Contract
+    Operation, scValToNative, Networks, Contract,
+    SorobanRpc
 } from '@stellar/stellar-sdk';
-import type { Server } from '@stellar/stellar-sdk/rpc';
+import {assembleTransaction, type Server} from '@stellar/stellar-sdk/rpc';
 
 export class StellarIntentService {
     private constructor() {}
@@ -148,6 +149,7 @@ export class StellarIntentService {
                 intent, fromChainConfig, provider
             );
 
+            console.log({transaction}, '<<<<<<<<<<<<<<<<TRANSACTION');
             return provider.wallet.sendTransaction(transaction);
         } catch (e) {
             console.error("Error creating intent order:", e);
@@ -233,6 +235,19 @@ export class StellarIntentService {
                 })
             ];
 
+            // const xdrParams = [
+            //     nativeToScVal(intent.amount, { type: 'u128' }),
+            //     nativeToScVal(intent.creator, { type: 'string' }),
+            //     nativeToScVal(intent.data, { type: 'bytes' }),
+            //     nativeToScVal(intent.destinationAddress, { type: 'string' }),
+            //     nativeToScVal(intent.dstNID, { type: 'string' }),
+            //     nativeToScVal(intent.emitter, { type: 'string' }),
+            //     nativeToScVal(intent.id, { type: 'u128' }),
+            //     nativeToScVal(intent.srcNID, { type: 'string' }),
+            //     nativeToScVal(intent.toAmount, { type: 'u128' }),
+            //     nativeToScVal(intent.toToken, { type: 'string' }),
+            //     nativeToScVal(intent.token, { type: 'string' }),
+            // ]
 
             const hostFunction = xdr.HostFunction.hostFunctionTypeInvokeContract(
                 new xdr.InvokeContractArgs({
@@ -266,28 +281,39 @@ export class StellarIntentService {
             if (!simulation.transactionData) {
                 throw new Error('Missing transaction data from simulation');
             }
+            console.log('BEFORE ASSAMBLE');
+            // return txWithResources.build();
+            if (!simulation.transactionData) {
+                throw new Error('Missing transaction data from simulation');
+            }
+            const txWithResources = SorobanRpc.assembleTransaction(simTx, simulation);
+            // console.log('BEFORE BUILD');
+
+            // const transaction = txBuilder.build();
+            // console.log("AFTER BUILD")
+            // return transaction;
+            // const minFee = Number.parseInt(simulation.minResourceFee || '1000');
+            // const totalFee = Math.max(minFee * 2, 5000);
+            // const freshSourceAccount = await provider.server.getAccount(walletAddress);
+            //
+            // const transaction = new TransactionBuilder(freshSourceAccount, {
+            //     fee: totalFee.toString(),
+            //     networkPassphrase: provider.networkPassphrase,
+            // })
+            //     .addOperation(
+            //         Operation.invokeHostFunction({
+            //             func: hostFunction,
+            //         })
+            //     )
+            //     .setTimeout(60)
+            //     .setSorobanData(simulation.transactionData)
+            //     .build();
+            //
+            // console.log({transaction}, '<<<<<<<<<<<<<<<AFTER BUILD SUCCESS')
+            // return transaction;
+            return txWithResources.build();
 
 
-            const minFee = Number.parseInt(simulation.minResourceFee || '1000');
-            const totalFee = Math.max(minFee * 2, 5000);
-            const freshSourceAccount = await provider.server.getAccount(provider.wallet.getAddress());
-
-
-            const transaction = new TransactionBuilder(freshSourceAccount, {
-                fee: totalFee.toString(),
-                networkPassphrase: provider.networkPassphrase,
-            })
-                .addOperation(
-                    Operation.invokeHostFunction({
-                        func: hostFunction,
-                    })
-                )
-                .setTimeout(60)
-                .setSorobanData(simulation.transactionData)
-                .build();
-
-            console.log({transaction}, '<<<<<<<<<<<<<<<AFTER BUILD SUCCESS')
-            return transaction;
         } catch (error) {
             console.error("Error constructing swap transaction:", error);
             throw error;

@@ -81,6 +81,7 @@ export class StellarWalletProvider implements StellarWallet {
         try {
             if (this._keypair) {
                 console.log("before sign");
+            console.log({keyPair: this._keypair}, 'THIS IS KEYPAIR FOR SIGNING');
                 transaction.sign(this._keypair);
                 console.log("after sign");
             } else if (!transaction.signatures || transaction.signatures.length === 0) {
@@ -97,9 +98,9 @@ export class StellarWalletProvider implements StellarWallet {
             if(response?.status === "ERROR"){
                 throw new Error(response.status);
             }
-            if(response?.status === "PENDING"){
-                throw new Error(response.status);
-            }
+            // if(response?.status === "PENDING"){
+            //     throw new Error(response.status);
+            // }
             return {
                 ok: true,
                 value: response.hash,
