@@ -7,10 +7,11 @@ import {
   EvmProvider,
   type GetChainProviderType,
   IconProvider,
+  SolanaProvider,
   SuiProvider,
   type SwapOrder,
 } from '../entities/index.js';
-import { isEvmChainConfig, isIconChainConfig, isSuiChainConfig } from '../guards.js';
+import { isEvmChainConfig, isIconChainConfig, isSolanaChainConfig, isSuiChainConfig } from '../guards.js';
 import type {
   ChainConfig,
   ChainName,
@@ -29,6 +30,7 @@ import { EvmIntentService } from './EvmIntentService.js';
 import { SolverApiService } from './SolverApiService.js';
 import { SuiIntentService } from './SuiIntentService.js';
 import { IconIntentService } from './IconIntentService.js';
+import { SolanaIntentService } from './SolanaIntentService.js';
 
 export class IntentService {
   private readonly config: IntentServiceConfig;
@@ -100,7 +102,7 @@ export class IntentService {
             error: new Error('[IntentService.isAllowanceValid] provider should be of type EvmProvider'),
           };
         }
-      } else if (isSuiChainConfig(fromChainConfig) || isIconChainConfig(fromChainConfig)) {
+      } else if (isSuiChainConfig(fromChainConfig) || isIconChainConfig(fromChainConfig) || isSolanaChainConfig(fromChainConfig)) {
         // no allowance supported/required on SUI or Icon
         return {
           ok: true,
@@ -224,6 +226,15 @@ export class IntentService {
             error: new Error('[IntentService.createIntentOrder] provider should be of type IconProvider'),
           };
         }
+      } else if (isSolanaChainConfig(fromChainConfig)) {
+        if (provider instanceof SolanaProvider) {
+          return SolanaIntentService.createIntentOrder(payload, fromChainConfig, toChainConfig, provider);
+        } else {
+          return {
+            ok: false,
+            error: new Error('[IntentService.createIntentOrder] provider should be of type SolanaProvider'),
+          };
+        }
       } else {
         return {
           ok: false,
@@ -237,6 +248,45 @@ export class IntentService {
       };
     }
   }
+
+  /**
+   * Cancel active Intent Order
+   * @param txHash - Transaction hash
+   * @param chain - Chain on which Order was created on
+   * @param provider - Solana provider
+   * @return string - Transaction Hash
+   */
+  public async cancelIntentOrderByTxnHash(
+    txHash: string,
+    chain: ChainName,
+    provider: ChainProviderType,
+  ): Promise<Result<string>> {
+    try {
+      const chainConfig = this.getChainConfig(chain);
+
+      if (isSolanaChainConfig(chainConfig)) {
+        if (provider instanceof SolanaProvider) {
+          return SolanaIntentService.cancelIntentOrderByTxnHash(txHash, chainConfig, provider);
+        } else {
+          return {
+            ok: false,
+            error: new Error('IntentService.cancelIntentOrder] provider should be of type SolanaProvider'),
+          };
+        }
+      } else {
+        return {
+          ok: false,
+          error: new Error(`${chain} chain not supported`),
+        };
+      }
+    } catch (e) {
+      return {
+        ok: false,
+        error: e,
+      };
+    }
+  }
+
 
   /**
    * Cancel active Intent Order
@@ -313,6 +363,8 @@ export class IntentService {
       return SuiIntentService.getOrder(txHash, chainConfig, provider);
     } else if (provider instanceof IconProvider && isIconChainConfig(chainConfig)) {
       return IconIntentService.getOrder(txHash, chainConfig, provider);
+    } else if (provider instanceof SolanaProvider && isSolanaChainConfig(chainConfig)) {
+      return SolanaIntentService.getOrder(txHash, chainConfig, provider);
     } else {
       return {
         ok: false,

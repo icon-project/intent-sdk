@@ -1,12 +1,12 @@
 import type { Chain } from 'viem';
 import { arbitrum, polygon } from 'viem/chains';
-import type { ChainConfig, ChainName, EvmChainConfig, IconChainConfig, SuiChainConfig } from './types.js';
+import type { ChainConfig, ChainName, EvmChainConfig, IconChainConfig, SolanaChainConfig, SuiChainConfig } from './types.js';
 
 export const DEFAULT_MAX_RETRY = 3;
 export const DEFAULT_RETRY_DELAY_MS = 2000;
 export const ICON_TX_RESULT_WAIT_MAX_RETRY = 10;
 
-export const supportedChains: ChainName[] = ['arb', 'sui', 'pol', 'icon'];
+export const supportedChains: ChainName[] = ['arb', 'sui', 'pol', 'icon', 'solana'];
 
 export function getEvmViemChain(chainName: ChainName): Chain {
   switch (chainName) {
@@ -221,4 +221,33 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
       },
     ],
   } satisfies IconChainConfig,
+  ['solana']: {
+    chain: {
+      name: 'solana',
+      type: 'solana',
+    },
+    nid: 'solana',
+    intentContract: 'FgPgECEpBRdV9gV18jR7icvpPabEvgVJof3A6aPn1UjY',
+    nativeToken: '11111111111111111111111111111111',
+    supportedTokens: [
+      {
+        symbol: 'SOL',
+        name: 'Sol',
+        decimals: 6,
+        address: '11111111111111111111111111111111',
+      },
+      {
+        symbol: 'WSOL',
+        name: 'Wrapped Sol',
+        decimals: 9,
+        address: 'So11111111111111111111111111111111111111112',
+      },
+      {
+        symbol: 'USDC',
+        name: 'USD Coin (USDC)',
+        decimals: 6,
+        address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+      },
+    ],
+  } satisfies SolanaChainConfig,
 } as const;

@@ -25,9 +25,15 @@ import {
   isIconInitializedConfig,
   isIconUninitializedConfig,
   isPrivateKeyInit,
+  isSolanaUninitializedConfig,
 } from '../guards.js';
 import { IconWalletProvider } from '../libs/IconWalletProvider.js';
 import { privateKeyToAccount } from 'viem/accounts';
+import { Connection, PublicKey } from "@solana/web3.js";
+import { AnchorProvider, type Idl } from "@coral-xyz/anchor";
+import { SolanaWalletProvider } from '../libs/SolanaWalletProvider.js';
+import type { Wallet as SolanaWallet } from '@coral-xyz/anchor/dist/cjs/provider.js';
+import * as anchor from "@coral-xyz/anchor";
 
 export type CustomProvider = {
   request: (...args: unknown[]) => Promise<unknown>;
@@ -166,22 +172,74 @@ export class IconProvider {
   }
 }
 
-export type ChainProviderType = EvmProvider | SuiProvider | IconProvider;
+
+// solana provider
+export type SolanaUninitializedConfig = {
+  solanaRpcUrl: HttpPrefixedUrl;
+  privateKey: string,
+};
+
+export type SolanaInitializedConfig = {
+  connection: Connection,
+  wallet: SolanaWallet,
+};
+
+export class SolanaProvider {
+  public readonly provider: AnchorProvider
+  public readonly walletProvider?: SolanaWalletProvider
+  public readonly wallet?: SolanaWallet
+  public readonly connection: Connection
+  public intentIdl?: Idl
+
+  constructor(payload: SolanaUninitializedConfig | SolanaInitializedConfig) {
+    const intentProgram = new PublicKey("FgPgECEpBRdV9gV18jR7icvpPabEvgVJof3A6aPn1UjY")
+    if (isSolanaUninitializedConfig(payload)) {
+      this.walletProvider = new SolanaWalletProvider(payload.privateKey);
+      this.connection = new Connection(payload.solanaRpcUrl, "finalized");
+      this.provider = new AnchorProvider(this.connection, this.walletProvider.wallet, { commitment: "confirmed" });
+      this.initializeIntentIdl(intentProgram, this.connection).catch(err => {
+        console.error("Error initializing IDL:", err);
+      });
+    } else {
+      this.connection = payload.connection;
+      this.wallet = payload.wallet
+      this.provider = new AnchorProvider(this.connection, payload.wallet, { commitment: "confirmed" });
+      this.initializeIntentIdl(intentProgram, this.connection).catch(err => {
+        console.error("Error initializing IDL:", err);
+      });
+    }
+  }
+
+  initializeIntentIdl = async (intentProgramKey: PublicKey, connection: Connection) => {
+    const intendIdl = await anchor.Program.fetchIdl(intentProgramKey, { connection })
+    if (intendIdl) {
+      this.intentIdl = intendIdl
+    } else {
+      throw new Error("couldn't download intent idl")
+    }
+  }
+}
+
+export type ChainProviderType = EvmProvider | SuiProvider | IconProvider | SolanaProvider;
 
 export type ChainProvider<T extends ChainType | undefined = undefined> = T extends 'evm'
   ? EvmProvider
   : T extends 'sui'
-    ? SuiProvider
-    : T extends 'icon'
-      ? IconProvider
-      : never;
+  ? SuiProvider
+  : T extends 'icon'
+  ? IconProvider
+  : T extends 'solana'
+  ? SolanaProvider
+  : never;
 
 export type GetChainProviderType<T extends ChainName> = T extends 'arb' | 'pol'
   ? ChainProvider<'evm'>
   : T extends 'sui'
-    ? ChainProvider<'sui'>
-    : T extends 'icon'
-      ? ChainProvider<'icon'>
-      : never;
+  ? ChainProvider<'sui'>
+  : T extends 'icon'
+  ? ChainProvider<'icon'>
+  : T extends 'solana'
+  ? ChainProvider<'solana'>
+  : never;
 
 export type NonEmptyChainProviders = [ChainProvider, ...ChainProvider[]];

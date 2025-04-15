@@ -1,8 +1,8 @@
 import type { Address } from 'viem';
 import type { TransactionResult as SuiTransactionResult } from '@mysten/sui/transactions';
 
-export type ChainType = 'evm' | 'sui' | 'icon';
-export type ChainName = 'sui' | 'arb' | 'pol' | 'icon';
+export type ChainType = 'evm' | 'sui' | 'icon' | 'solana';
+export type ChainName = 'sui' | 'arb' | 'pol' | 'icon' | 'solana';
 export type ChainInfo<T extends ChainType> = {
   name: ChainName;
   type: T;
@@ -59,15 +59,22 @@ export type IconChainConfig = BaseChainConfig<'icon'> & {
   nativeToken: IconSmartContractAddress;
 };
 
-export type ChainConfig = EvmChainConfig | SuiChainConfig | IconChainConfig;
+export type SolanaChainConfig = BaseChainConfig<'solana'> & {
+  intentContract: string;
+  nativeToken: string;
+};
+
+export type ChainConfig = EvmChainConfig | SuiChainConfig | IconChainConfig | SolanaChainConfig;
 
 export type GetChainConfigType<T extends ChainName> = T extends 'sui'
   ? SuiChainConfig
   : T extends 'arb' | 'pol'
-    ? EvmChainConfig
-    : T extends 'icon'
-      ? IconChainConfig
-      : never;
+  ? EvmChainConfig
+  : T extends 'icon'
+  ? IconChainConfig
+  : T extends 'solana'
+  ? SolanaChainConfig
+  : never;
 
 export type Result<T, E = Error | unknown> = { ok: true; value: T } | { ok: false; error: E };
 

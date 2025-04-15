@@ -9,6 +9,7 @@ import type {
   IconTransactionEventLogs,
   IconEventLog,
   IconEoaAddress,
+  SolanaChainConfig,
 } from './types.js';
 import type {
   EvmInitializedConfig,
@@ -17,6 +18,8 @@ import type {
   EvmUninitializedPrivateKeyConfig,
   IconInitializedConfig,
   IconUninitializedConfig,
+  SolanaInitializedConfig,
+  SolanaUninitializedConfig,
 } from './entities/index.js';
 import type { JsonRpcPayloadResponse, ResponseAddressType, ResponseSigningType } from './libs/index.js';
 
@@ -42,6 +45,10 @@ export function isIconChainConfig(value: ChainConfig): value is IconChainConfig 
   return typeof value === 'object' && value.chain.type === 'icon';
 }
 
+export function isSolanaChainConfig(value: ChainConfig): value is SolanaChainConfig {
+  return typeof value === 'object' && value.chain.type === 'solana';
+}
+
 export function isEvmUninitializedConfig(
   value: EvmUninitializedConfig | EvmInitializedConfig,
 ): value is EvmUninitializedConfig {
@@ -64,6 +71,12 @@ export function isIconInitializedConfig(
   value: IconUninitializedConfig | IconInitializedConfig,
 ): value is IconInitializedConfig {
   return typeof value === 'object' && 'iconService' in value;
+}
+
+export function isSolanaUninitializedConfig(
+  value: SolanaUninitializedConfig | SolanaInitializedConfig,
+): value is SolanaUninitializedConfig {
+  return typeof value === 'object' && 'solanaRpcUrl' in value;
 }
 
 export function isIconAddress(value: unknown): value is IconAddress {
