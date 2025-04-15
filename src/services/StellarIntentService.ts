@@ -6,52 +6,93 @@ import type {
     Result,
     StellarChainConfig
 } from '../types.js';
-import { Contract, TransactionBuilder, type Transaction, BASE_FEE, xdr } from "@stellar/stellar-sdk";
-
-interface OrderData {
-    id: string;
-    emitter: string;
-    src_nid: string;
-    dst_nid: string;
-    creator: string;
-    destination_address: string;
-    token: string;
-    amount: string;
-    to_token: string;
-    to_amount: string;
-    data: string | Buffer;
-    [key: string]: string | Buffer; // Allow for additional string properties
-}
+import {
+    TransactionBuilder,
+    xdr,
+    Address,
+    nativeToScVal,
+    Operation, scValToNative, Networks, Contract
+} from '@stellar/stellar-sdk';
+import type { Server } from '@stellar/stellar-sdk/rpc';
 
 export class StellarIntentService {
     private constructor() {}
 
-    private static convertOrderToScVal(order: OrderData): xdr.ScVal {
-        const entries = Object.entries(order).map(([key, value]) => {
-            const keyScVal = xdr.ScVal.scvString(key);
-            let valueScVal: xdr.ScVal;
+    /**
+     * Call the get_nid function on the Stellar contract
+     * @param contractAddress - The contract address
+     * @param provider - The Stellar provider
+     * @returns The network ID as a string
+     */
+    static async getNid(
+        contractAddress: string,
+        provider: StellarProvider
+    ): Promise<Result<string>> {
+        try {
+            console.log(`Calling get_nid on contract: ${contractAddress}`);
 
-            if (typeof value === 'string') {
-                if (key === 'id' || key === 'amount' || key === 'to_amount') {
-                    const longValue = BigInt(value);
-                    const u128 = new xdr.UInt128Parts({
-                        hi: xdr.Uint64.fromString("0"),
-                        lo: xdr.Uint64.fromString(value)
-                    });
-                    valueScVal = xdr.ScVal.scvU128(u128);
-                } else {
-                    valueScVal = xdr.ScVal.scvString(value);
-                }
-            } else if (Buffer.isBuffer(value)) {
-                valueScVal = xdr.ScVal.scvBytes(value);
-            } else {
-                valueScVal = xdr.ScVal.scvString(String(value));
+            // Get source account
+            const sourceAccount = await provider.server.getAccount(provider.wallet.getAddress());
+
+            // Convert contract address to the appropriate format
+            const contractId = Address.fromString(contractAddress).toScAddress();
+
+            // Create the host function call - get_nid typically doesn't need parameters
+            const hostFunction = xdr.HostFunction.hostFunctionTypeInvokeContract(
+                new xdr.InvokeContractArgs({
+                    contractAddress: contractId,
+                    functionName: 'get_nid',
+                    args: [] // No parameters
+                })
+            );
+
+            // Build simulation transaction
+            const simTx = new TransactionBuilder(sourceAccount, {
+                fee: '100',
+                networkPassphrase: provider.networkPassphrase,
+            })
+                .addOperation(
+                    Operation.invokeHostFunction({
+                        func: hostFunction,
+                    })
+                )
+                .setTimeout(0)
+                .build();
+
+            // Simulate transaction
+            console.log("Simulating get_nid transaction...");
+            const simulation = await provider.server._simulateTransaction(simTx);
+
+            if (simulation.error) {
+                console.error("Simulation error details:", JSON.stringify(simulation, null, 2));
+                throw new Error(`Simulation error: ${simulation.error}`);
             }
 
-            return new xdr.ScMapEntry({ key: keyScVal, val: valueScVal });
-        });
+            if (!simulation.results || !simulation.results[0]) {
+                throw new Error('Invalid simulation result');
+            }
 
-        return xdr.ScVal.scvMap(entries);
+            console.log({
+                simulation
+            }, 'THIS IS SIMULATION>>>>>>>>>>>>>>>>>.')
+            // Convert the result from ScVal to native type (should be a string)
+            const xdrBuffer = Buffer.from(simulation.results[0].xdr, 'base64');
+            const scVal = xdr.ScVal.fromXDR(xdrBuffer);
+
+            // Convert the result from ScVal to native type
+            const nid = scValToNative(scVal);
+            console.log(`Successfully retrieved nid: ${nid}`);
+            return {
+                ok: true,
+                value: nid as string
+            };
+        } catch (e) {
+            console.error("Error getting nid:", e);
+            return {
+                ok: false,
+                error: e,
+            };
+        }
     }
 
     /**
@@ -68,6 +109,13 @@ export class StellarIntentService {
         provider: StellarProvider,
     ): Promise<Result<string>> {
         try {
+            // Create a SwapOrder struct with the required parameters
+            console.log({
+                payload,
+                fromChainConfig,
+                toChainConfig,
+                provider
+            }, '<<<<<<<<<<<<<<<<HERE START CREATE INTENT')
             const intent = new SwapOrder(
                 0n,
                 fromChainConfig.intentContract,
@@ -86,12 +134,23 @@ export class StellarIntentService {
                 ),
             );
 
+            console.log("Creating transaction for intent:", {
+                fromAddress: payload.fromAddress,
+                toAddress: payload.toAddress,
+                token: payload.token,
+                amount: payload.amount.toString(),
+                toToken: payload.toToken,
+                toAmount: payload.toAmount.toString(),
+                quoteUuid: payload.quote_uuid
+            });
+
             const transaction = await StellarIntentService.constructSwapTransaction(
                 intent, fromChainConfig, provider
             );
 
             return provider.wallet.sendTransaction(transaction);
         } catch (e) {
+            console.error("Error creating intent order:", e);
             return {
                 ok: false,
                 error: e,
@@ -99,45 +158,140 @@ export class StellarIntentService {
         }
     }
 
-
     private static async constructSwapTransaction(
         intent: SwapOrder,
         chainConfig: StellarChainConfig,
         provider: StellarProvider,
-    ): Promise<Transaction> {
-        const sourceAccount = await provider.server.getAccount(provider.wallet.getAddress());
+    ) {
+        try {
 
-        const orderData = {
-            id: intent.id.toString(),
-            emitter: intent.emitter,
-            src_nid: intent.srcNID,
-            dst_nid: intent.dstNID,
-            creator: intent.creator,
-            destination_address: intent.destinationAddress,
-            token: intent.token,
-            amount: intent.amount.toString(),
-            to_token: intent.toToken,
-            to_amount: intent.toAmount.toString(),
-            data: Buffer.from(intent.data).toString('base64')
-        };
+            const walletAddress = provider.wallet.getAddress();
+            const contractAddress = Address.fromString(chainConfig.intentContract).toScAddress();
 
-        const orderScVal = StellarIntentService.convertOrderToScVal(orderData);
+            function bigintToUInt128Parts(value: bigint): xdr.UInt128Parts {
+                const hexValue = value.toString(16).padStart(2, '0');
 
-        const txBuilder = new TransactionBuilder(sourceAccount, {
-            fee: BASE_FEE,
-            networkPassphrase: provider.networkPassphrase
-        });
+                if (value < BigInt('0x10000000000000000')) {
+                    return new xdr.UInt128Parts({
+                        lo: xdr.Uint64.fromString(value.toString()),
+                        hi: xdr.Uint64.fromString('0')
+                    });
+                }
 
-        const contract = new Contract(chainConfig.intentContract);
+                const hiPart = value >> BigInt(64);
+                const loPart = value & BigInt('0xffffffffffffffff');
 
-        const transaction = txBuilder
-            .addOperation(
-                contract.call("swap", orderScVal)
-            )
-            .setTimeout(30)
-            .build();
+                return new xdr.UInt128Parts({
+                    lo: xdr.Uint64.fromString(loPart.toString()),
+                    hi: xdr.Uint64.fromString(hiPart.toString())
+                });
+            }
+            const swapOrderMap = [
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("amount"),
+                    val: xdr.ScVal.scvU128(bigintToUInt128Parts(intent.amount))
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("creator"),
+                    val: xdr.ScVal.scvString(intent.creator)
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("data"),
+                    val: xdr.ScVal.scvBytes(Buffer.from(intent.data))
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("destination_address"),
+                    val: xdr.ScVal.scvString(intent.destinationAddress)
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("dst_nid"),
+                    val: xdr.ScVal.scvString(intent.dstNID)
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("emitter"),
+                    val: xdr.ScVal.scvString(intent.emitter)
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("id"),
+                    val: xdr.ScVal.scvU128(bigintToUInt128Parts(intent.id))
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("src_nid"),
+                    val: xdr.ScVal.scvString(intent.srcNID)
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("to_amount"),
+                    val: xdr.ScVal.scvU128(bigintToUInt128Parts(intent.toAmount))
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("to_token"),
+                    val: xdr.ScVal.scvString(intent.toToken)
+                }),
+                new xdr.ScMapEntry({
+                    key: xdr.ScVal.scvSymbol("token"),
+                    val: xdr.ScVal.scvString(intent.token)
+                })
+            ];
 
-        return transaction;
+
+            const hostFunction = xdr.HostFunction.hostFunctionTypeInvokeContract(
+                new xdr.InvokeContractArgs({
+                    contractAddress: contractAddress,
+                    functionName: 'swap',
+                    args: [xdr.ScVal.scvMap(swapOrderMap)]
+                })
+            );
+
+
+            const sourceAccount = await provider.server.getAccount(walletAddress);
+            const simTx = new TransactionBuilder(sourceAccount, {
+                fee: '1000',
+                networkPassphrase: provider.networkPassphrase,
+            })
+                .addOperation(
+                    Operation.invokeHostFunction({
+                        func: hostFunction,
+                    })
+                )
+                .setTimeout(60)
+                .build();
+
+            const simulation = await provider.server._simulateTransaction(simTx);
+
+            console.log({simulation}, '<<<<<<<<<<<<<<<<SIMULATION RESPONSE>>>>>>>>>>>>>>>>')
+            if (simulation.error) {
+                throw new Error(`Simulation error: ${simulation.error}`);
+            }
+
+            if (!simulation.transactionData) {
+                throw new Error('Missing transaction data from simulation');
+            }
+
+
+            const minFee = Number.parseInt(simulation.minResourceFee || '1000');
+            const totalFee = Math.max(minFee * 2, 5000);
+            const freshSourceAccount = await provider.server.getAccount(provider.wallet.getAddress());
+
+
+            const transaction = new TransactionBuilder(freshSourceAccount, {
+                fee: totalFee.toString(),
+                networkPassphrase: provider.networkPassphrase,
+            })
+                .addOperation(
+                    Operation.invokeHostFunction({
+                        func: hostFunction,
+                    })
+                )
+                .setTimeout(60)
+                .setSorobanData(simulation.transactionData)
+                .build();
+
+            console.log({transaction}, '<<<<<<<<<<<<<<<AFTER BUILD SUCCESS')
+            return transaction;
+        } catch (error) {
+            console.error("Error constructing swap transaction:", error);
+            throw error;
+        }
     }
 
     /**
@@ -153,28 +307,63 @@ export class StellarIntentService {
     ): Promise<Result<string>> {
         try {
             const sourceAccount = await provider.server.getAccount(provider.wallet.getAddress());
-            const txBuilder = new TransactionBuilder(sourceAccount, {
-                fee: BASE_FEE,
-                networkPassphrase: provider.networkPassphrase
-            });
+            const contractAddress = Address.fromString(chainConfig.intentContract).toScAddress();
 
-            const u128 = new xdr.UInt128Parts({
-                hi: xdr.Uint64.fromString("0"),
-                lo: xdr.Uint64.fromString(orderId.toString())
-            });
-            const idScVal = xdr.ScVal.scvU128(u128);
+            const xdrParams = [
+                nativeToScVal(orderId.toString(), { type: 'u128' }),
+            ];
 
-            const contract = new Contract(chainConfig.intentContract);
+            const hostFunction = xdr.HostFunction.hostFunctionTypeInvokeContract(
+                new xdr.InvokeContractArgs({
+                    contractAddress,
+                    functionName: 'cancel',
+                    args: xdrParams
+                })
+            );
 
-            const transaction = txBuilder
+            const simTx = new TransactionBuilder(sourceAccount, {
+                fee: '100',
+                networkPassphrase: provider.networkPassphrase,
+            })
                 .addOperation(
-                    contract.call("cancel", idScVal)
+                    Operation.invokeHostFunction({
+                        func: hostFunction,
+                    })
                 )
-                .setTimeout(60)
+                .setTimeout(0)
                 .build();
 
-            return provider.wallet.sendTransaction(transaction);
+            const simulation = await provider.server._simulateTransaction(simTx);
+
+            if (simulation.error) {
+                throw new Error(`Simulation error: ${simulation.error}`);
+            }
+
+            if (!simulation.results) {
+                throw new Error('Invalid simulation result');
+            }
+
+            const transaction = new TransactionBuilder(sourceAccount, {
+                fee: '100',
+                networkPassphrase: provider.networkPassphrase,
+            })
+                .addOperation(
+                    Operation.invokeHostFunction({
+                        func: hostFunction,
+                        auth: []
+                    })
+                )
+                .setTimeout(30);
+
+            if (simulation.transactionData) {
+                transaction.setSorobanData(simulation.transactionData);
+            }
+
+            const builtTx = transaction.build();
+
+            return provider.wallet.sendTransaction(builtTx);
         } catch (e) {
+            console.error("Error canceling intent order:", e);
             return {
                 ok: false,
                 error: e,
@@ -194,31 +383,32 @@ export class StellarIntentService {
         provider: StellarProvider,
     ): Promise<Result<SwapOrder>> {
         try {
-            const txResult = await provider.server.getTransaction(txHash)
+            const txResult = await StellarIntentService.getTxResult(provider.server, txHash);
 
             if (!txResult) {
                 return {
                     ok: false,
-                    error: new Error(`Transaction ${txHash} not found`),
+                    error: new Error(`Transaction ${txHash} not found or failed`),
                 };
             }
-            //TODO needs to implement as per the result
-            console.log({
-                txResult,
-            })
 
+            // Extract the SwapOrder from the transaction result
+            console.log("Transaction result:", txResult);
+
+            // Create a placeholder SwapOrder - in a real implementation,
+            // you would extract the actual data from the transaction
             const swapOrder = new SwapOrder(
-                0n,
+                0n, // ID
                 chainConfig.intentContract,
                 chainConfig.nid,
-                "",
-                "",
-                "",
-                "",
-                0n,
-                "",
-                0n,
-                Buffer.from([])
+                "",  // dstNID
+                "",  // creator
+                "",  // destinationAddress
+                "",  // token
+                0n,  // amount
+                "",  // toToken
+                0n,  // toAmount
+                Buffer.from([]) // data
             );
 
             return {
@@ -226,6 +416,7 @@ export class StellarIntentService {
                 value: swapOrder,
             };
         } catch (e) {
+            console.error("Error getting order:", e);
             return {
                 ok: false,
                 error: e,
@@ -233,5 +424,34 @@ export class StellarIntentService {
         }
     }
 
+    /**
+     * Helper function to wait for transaction finalization
+     */
+    private static async getTxResult(server: Server, txHash: string, maxAttempts = 8) {
+        let counter = 0;
+        while (true) {
+            try {
+                const result = await server.getTransaction(txHash);
+                if (result.status === 'SUCCESS') {
+                    console.log('Transaction successful:', result.status);
+                    return result;
+                } else {
+                    await StellarIntentService.sleep(500);
+                }
+            } catch {
+                await StellarIntentService.sleep(500);
+                counter++;
+            }
+            if (counter > maxAttempts) {
+                throw Error("Transaction not finalized after maximum attempts");
+            }
+        }
+    }
 
+    /**
+     * Helper sleep function
+     */
+    private static sleep(ms: number) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 }

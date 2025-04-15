@@ -178,19 +178,19 @@ export type StellarUninitializedConfig = {
 };
 
 export type StellarInitializedConfig = {
-  server: StellarSdk.SorobanRpc.Server;
+  server: StellarSdk.rpc.Server;
   networkPassphrase: string;
   wallet?: StellarWalletType;
 };
 
 export class StellarProvider {
   public readonly wallet: StellarWalletProvider;
-  public readonly server: StellarSdk.SorobanRpc.Server;
+  public readonly server: StellarSdk.rpc.Server;
   public readonly networkPassphrase: string;
 
   constructor(payload: StellarUninitializedConfig | StellarInitializedConfig) {
     if ('sorobanUrl' in payload) {
-      this.server = new StellarSdk.SorobanRpc.Server(payload.sorobanUrl);
+      this.server = new StellarSdk.rpc.Server(payload.sorobanUrl);
       this.networkPassphrase = payload.networkPassphrase;
       this.wallet = new StellarWalletProvider(
           payload.wallet,
