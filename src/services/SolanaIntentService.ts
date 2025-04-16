@@ -135,16 +135,16 @@ export class SolanaIntentService {
                 throw new Error("invalid intent idl program with no swap specified")
             }
             const cancelSwapOrder = new SwapOrderSolana(
-                new BN(0),
+                new BN(swapOrder.id),
                 swapOrder.emitter,
                 swapOrder.srcNID,
                 swapOrder.dstNID,
                 swapOrder.creator,
                 swapOrder.destinationAddress,
                 swapOrder.token,
-                new BN(swapOrder.toAmount),
-                swapOrder.toToken,
                 new BN(swapOrder.amount),
+                swapOrder.toToken,
+                new BN(swapOrder.toAmount),
                 swapOrder.data
             );
             const txnInstruction = await intentProgram.methods
