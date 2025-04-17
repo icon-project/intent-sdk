@@ -1,10 +1,12 @@
 import createKeccakHash from "keccak";
 import * as rlp from "rlp";
+import * as borsh from "@coral-xyz/borsh";
 import type * as anchor from "@coral-xyz/anchor";
 import { type Connection, type Keypair, PublicKey, type TransactionInstruction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 import type { SwapOrder } from "../entities/SwapOrder.js";
 import type { Wallet } from "@coral-xyz/anchor/dist/cjs/provider.js";
-
+import type { Result } from "../types.js";
+const eventLogPrefix = "Program data: "
 
 function keccakHash(message: Buffer) {
     return createKeccakHash("keccak256").update(message).digest("hex");
@@ -35,6 +37,53 @@ export async function buildV0Txn(instructions: TransactionInstruction[],
         tx.sign([signers]);
     }
     return tx;
+}
+
+
+export async function waitForConfirmation(signature: string, connection: Connection) {
+    const commitment = "finalized";
+    const latestBlockhash = await connection.getLatestBlockhash();
+    await connection.confirmTransaction({
+        signature,
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+    }, commitment);
+}
+
+
+export const parseSolanaSwapOrder = (logs: string[] | null | undefined): Result<SwapOrder> => {
+    if (logs) {
+        for (let log of logs) {
+            if (log.startsWith(eventLogPrefix)) {
+                log = log.replace(eventLogPrefix, "").trim()
+                const eventSchema = borsh.struct<SwapOrder>([
+                    borsh.u64("discriminator"),
+                    borsh.u128("id"),
+                    borsh.str("emitter"),
+                    borsh.str("srcNID"),
+                    borsh.str("dstNID"),
+                    borsh.str("creator"),
+                    borsh.str("destinationAddress"),
+                    borsh.str("token"),
+                    borsh.u128("amount"),
+                    borsh.str("toToken"),
+                    borsh.u128("toAmount"),
+                    borsh.vecU8("data"),
+
+                ])
+                const buffer = Buffer.from(log, 'base64');
+                const swapOrder: SwapOrder = eventSchema.decode(buffer)
+                return {
+                    ok: true,
+                    value: swapOrder
+                }
+            }
+        }
+    }
+    return {
+        ok: false,
+        error: new Error("no logs found")
+    }
 }
 
 function encodeSwapOrder(swapOrder: SwapOrder) {

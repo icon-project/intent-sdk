@@ -5,10 +5,9 @@ import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system.js";
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import * as anchor from "@coral-xyz/anchor";
 import { BN } from "@coral-xyz/anchor";
-import * as borsh from "@coral-xyz/borsh";
-import { buildV0Txn, intentConfig, intentOrder, intentOrderFinished, intentVaultNative, intentVaultToken, SwapOrderSolana } from "../utils/solana-utils.js";
 
-const eventLogPrefix = "Program data: "
+import { buildV0Txn, intentConfig, intentOrder, intentOrderFinished, intentVaultNative, intentVaultToken, parseSolanaSwapOrder, SwapOrderSolana, waitForConfirmation } from "../utils/solana-utils.js";
+
 
 export class SolanaIntentService {
     private constructor() { }
@@ -90,6 +89,7 @@ export class SolanaIntentService {
                 };
             }
             const txnResult = await provider.connection.sendTransaction(txn);
+            await waitForConfirmation(txnResult, provider.connection)
             return {
                 ok: true,
                 value: txnResult,
@@ -171,6 +171,7 @@ export class SolanaIntentService {
                 };
             }
             const txnResult = await provider.connection.sendTransaction(txn);
+            await waitForConfirmation(txnResult, provider.connection)
             return {
                 ok: true,
                 value: txnResult,
@@ -223,37 +224,3 @@ export class SolanaIntentService {
 }
 
 
-const parseSolanaSwapOrder = (logs: string[] | null | undefined): Result<SwapOrder> => {
-    if (logs) {
-        for (let log of logs) {
-            if (log.startsWith(eventLogPrefix)) {
-                log = log.replace(eventLogPrefix, "").trim()
-                const eventSchema = borsh.struct<SwapOrder>([
-                    borsh.u64("discriminator"),
-                    borsh.u128("id"),
-                    borsh.str("emitter"),
-                    borsh.str("srcNID"),
-                    borsh.str("dstNID"),
-                    borsh.str("creator"),
-                    borsh.str("destinationAddress"),
-                    borsh.str("token"),
-                    borsh.u128("amount"),
-                    borsh.str("toToken"),
-                    borsh.u128("toAmount"),
-                    borsh.vecU8("data"),
-
-                ])
-                const buffer = Buffer.from(log, 'base64');
-                const swapOrder: SwapOrder = eventSchema.decode(buffer)
-                return {
-                    ok: true,
-                    value: swapOrder
-                }
-            }
-        }
-    }
-    return {
-        ok: false,
-        error: new Error("no logs found")
-    }
-}
