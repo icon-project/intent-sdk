@@ -233,7 +233,7 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
       {
         symbol: 'SOL',
         name: 'Sol',
-        decimals: 6,
+        decimals: 9,
         address: '11111111111111111111111111111111',
       },
       {
