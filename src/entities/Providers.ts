@@ -173,14 +173,16 @@ export class IconProvider {
 export type StellarUninitializedConfig = {
   sorobanUrl: HttpPrefixedUrl;
   networkPassphrase: string;
-  wallet?: StellarWalletType;
-  provider: StellarProviderType;
+  wallet: StellarWalletType;
 };
 
 export type StellarInitializedConfig = {
-  server: StellarSdk.rpc.Server;
+  sorobanUrl: HttpPrefixedUrl;
   networkPassphrase: string;
-  wallet?: StellarWalletType;
+  wallet?: {
+    address: string;
+  };
+  provider: StellarProviderType
 };
 
 export class StellarProvider {
@@ -189,9 +191,9 @@ export class StellarProvider {
   public readonly networkPassphrase: string;
 
   constructor(payload: StellarUninitializedConfig | StellarInitializedConfig) {
-    if ('sorobanUrl' in payload) {
-      this.server = new StellarSdk.rpc.Server(payload.sorobanUrl);
-      this.networkPassphrase = payload.networkPassphrase;
+    this.server = new StellarSdk.rpc.Server(payload.sorobanUrl);
+    this.networkPassphrase = payload.networkPassphrase;
+    if ('provider' in payload) {
       this.wallet = new StellarWalletProvider(
           payload.wallet,
           this.server,
@@ -199,26 +201,16 @@ export class StellarProvider {
           payload.provider
       );
     } else {
-      this.server = payload.server;
-      this.networkPassphrase = payload.networkPassphrase;
-      if (payload.wallet) {
-        this.wallet = new StellarWalletProvider(
-            payload.wallet,
-            this.server,
-            this.networkPassphrase
-        );
-      } else {
-        this.wallet = new StellarWalletProvider(
-            undefined,
-            this.server,
-            this.networkPassphrase
-        );
-      }
+      this.wallet = new StellarWalletProvider(
+          payload.wallet,
+          this.server,
+          this.networkPassphrase
+      );
     }
   }
 }
 
-export type ChainProviderType = EvmProvider | SuiProvider | IconProvider | StellarProviderType;
+export type ChainProviderType = EvmProvider | SuiProvider | IconProvider | StellarProvider;
 
 export type ChainProvider<T extends ChainType | undefined = undefined> = T extends 'evm'
   ? EvmProvider

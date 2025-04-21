@@ -141,7 +141,7 @@ export type IntentServiceConfig = {
   solverApiEndpoint: string;
 };
 
-export type HttpPrefixedUrl = `http${string}`;
+export type HttpPrefixedUrl = string;
 
 export type PrivateKeyHolder<T = string> = {
   privateKey: T;
