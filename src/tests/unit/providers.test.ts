@@ -148,7 +148,6 @@ describe('StellarProvider', () => {
     expect(provider.wallet).toBeDefined();
     expect(provider.networkPassphrase).toBe(networkPassphrase);
     expect(provider.wallet.getAddress()).toBe(publickey);
-    console.log(provider);
   })
   it('should initialize with valid provider', () => {
     const provider = new StellarProvider({

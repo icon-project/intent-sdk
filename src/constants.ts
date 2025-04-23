@@ -235,7 +235,6 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
     },
     nid: 'stellar',
     intentContract: 'CDZPLSD426ZCR5XB2D7HDYEDEAS5KYZFX6JEPLFY7QOQ3QHE6DHMECW7',
-    // intentContract: 'CDMKH7TPXCV6ORMLCGXJZSX6DTTKLBO6WNBLABKBRM2OUV3HCWVIHMYM', //Testnet contract
     nativeToken: 'CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA',
     supportedTokens: [
       {

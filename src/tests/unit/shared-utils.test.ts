@@ -30,7 +30,6 @@ describe('shared-utils', () => {
 
       invalidHexes.forEach(input => {
         const result = isValidHex(input);
-        console.log(`Testing input: ${input}, Result: ${result}`);
         expect(result).toBe(false);
       });
     });

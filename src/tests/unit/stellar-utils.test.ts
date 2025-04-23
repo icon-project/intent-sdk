@@ -31,7 +31,6 @@ interface ScValBytes extends ScValBase {
     bytes(): Uint8Array;
 }
 
-// Union type representing all possible ScVal types
 type ScVal = ScValBase | ScValU128 | ScValI128 | ScValString | ScValSymbol | ScValBytes;
 
 describe('stellar-utils', () => {
@@ -82,7 +81,6 @@ describe('stellar-utils', () => {
                 expect(result.hi().toString()).toBe(expectedHi);
                 expect(result.lo().toString()).toBe(expectedLo);
 
-                // Verify we can reconstruct the original value
                 const reconstructed = (BigInt(result.hi().toString()) << 64n) + BigInt(result.lo().toString());
                 expect(reconstructed).toBe(input);
             });

@@ -53,16 +53,6 @@ export class StellarIntentService {
         ),
       );
 
-      console.log("Creating transaction for intent:", {
-        fromAddress: payload.fromAddress,
-        toAddress: payload.toAddress,
-        token: payload.token,
-        amount: payload.amount.toString(),
-        toToken: payload.toToken,
-        toAmount: payload.toAmount.toString(),
-        quoteUuid: payload.quote_uuid,
-      });
-
       const transaction = await StellarIntentService.constructSwapTransaction(
         intent,
         fromChainConfig,
@@ -194,10 +184,6 @@ export class StellarIntentService {
     provider: StellarProvider,
   ): Promise<Result<string>> {
     try {
-      console.log("Cancelling intent order:", {
-        orderId: orderId.toString(),
-      });
-
       const walletAddress = provider.wallet.getAddress();
       const contractAddress = Address.fromString(
         chainConfig.intentContract,
@@ -359,7 +345,6 @@ export class StellarIntentService {
         const result = await server.getTransaction(txHash);
 
         if (result.status === "SUCCESS") {
-          console.log("Transaction successful:", { result });
           return result;
         }
 
