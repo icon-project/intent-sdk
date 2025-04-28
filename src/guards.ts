@@ -17,9 +17,10 @@ import type {
   EvmUninitializedConfig,
   EvmUninitializedPrivateKeyConfig,
   IconInitializedConfig,
-  IconUninitializedConfig,
+  IconUninitializedConfig, StellarConfig, StellarInitializedConfig, StellarUninitializedConfig,
 } from './entities/index.js';
 import type { JsonRpcPayloadResponse, ResponseAddressType, ResponseSigningType } from './libs/index.js';
+import type {StellarWalletType} from "./libs/StellarWalletProvider.js";
 
 export function isEvmChainConfig(value: ChainConfig): value is EvmChainConfig {
   return typeof value === 'object' && value.chain.type === 'evm';
@@ -33,6 +34,16 @@ export function isEvmUninitializedPrivateKeyConfig(
   value: EvmUninitializedConfig,
 ): value is EvmUninitializedPrivateKeyConfig {
   return typeof value === 'object' && 'chain' in value && 'privateKey' in value;
+}
+
+export function isStellarInitializedConfig(value: StellarConfig): value is StellarInitializedConfig {
+  return typeof value === 'object' && 'provider' in value;
+}
+
+export function isStellarUninitializedPrivateKeyConfig(
+  value: StellarWalletType,
+): boolean {
+  return typeof value === 'object' && 'privateKey' in value;
 }
 
 export function isSuiChainConfig(value: ChainConfig): value is SuiChainConfig {

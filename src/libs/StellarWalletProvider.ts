@@ -2,6 +2,7 @@ import type { Result } from "../types.js";
 import { isPrivateKeyInit } from "../guards.js";
 import * as StellarSdk from "@stellar/stellar-sdk";
 import { TransactionBuilder } from "@stellar/stellar-sdk";
+import { isPrivateKeyWallet, isProviderWallet, isTransactionContainSignature } from "../utils/index.js";
 
 export type StellarAddress = string;
 
@@ -75,11 +76,12 @@ export class StellarWalletProvider implements StellarWallet {
     }
     return this._wallet;
   }
+
   async sendTransaction(
     transaction: StellarSdk.Transaction,
   ): Promise<Result<string>> {
-    if (!this.wallet.privateKey && this._provider) {
-      const signedXdr = await this._provider.signTransaction({
+    if (isProviderWallet(this.wallet.privateKey, this._provider)) {
+      const signedXdr = await this._provider!.signTransaction({
         xdr: transaction.toXDR(),
         accountToSign: this.wallet.address,
         networkPassphrase: this.networkPassphrase,
@@ -94,25 +96,24 @@ export class StellarWalletProvider implements StellarWallet {
         throw new Error(response.status);
       }
 
-      if(response?.status === "PENDING"){
-          throw new Error(response.status);
-      }
       return {
         ok: true,
         value: response.hash,
       };
+
+    } else if(isPrivateKeyWallet(this._keypair)){
+      transaction.sign(this._keypair);
+    } else {
+      throw new Error("[StellarWalletProvider] Wallet not initialized");
     }
+
     try {
-      if (this._keypair) {
-        transaction.sign(this._keypair);
-      } else if (
-        !transaction.signatures ||
-        transaction.signatures.length === 0
-      ) {
+      if (isTransactionContainSignature(transaction))
+      {
         return {
           ok: false,
           error: new Error(
-            "[StellarWalletProvider] Transaction not signed and no keypair available",
+            "[StellarWalletProvider] Transaction is not signed",
           ),
         };
       }
@@ -122,6 +123,7 @@ export class StellarWalletProvider implements StellarWallet {
       if (response?.status === "ERROR") {
         throw new Error(response.status);
       }
+
       return {
         ok: true,
         value: response.hash,

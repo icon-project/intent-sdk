@@ -1,4 +1,6 @@
 import { xdr } from "@stellar/stellar-sdk";
+import type {StellarProviderType} from "../libs/StellarWalletProvider.js";
+import type * as StellarSdk from "@stellar/stellar-sdk";
 
 
 export function bigintToUInt128Parts(value: bigint): xdr.UInt128Parts {
@@ -65,5 +67,17 @@ export function extractScVal(val: InstanceType<typeof xdr.ScVal>) {
     console.error("Error in extractScVal:", error);
     return "EXTRACTION_ERROR";
   }
+}
+
+export function isPrivateKeyWallet (KeyPair: StellarSdk.Keypair | undefined)  {
+return !!KeyPair;
+}
+
+export function isProviderWallet (privateKey: string | undefined, provider: StellarProviderType | undefined): boolean | undefined  {
+return !privateKey && !!provider && 'signTransaction' in provider;
+}
+
+export function isTransactionContainSignature (transaction: StellarSdk.Transaction)  {
+  return !transaction.signatures || transaction.signatures.length === 0;
 }
 

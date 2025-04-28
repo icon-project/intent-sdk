@@ -25,6 +25,8 @@ import {
   isIconInitializedConfig,
   isIconUninitializedConfig,
   isPrivateKeyInit,
+  isStellarInitializedConfig,
+  isStellarUninitializedPrivateKeyConfig,
 } from '../guards.js';
 import { IconWalletProvider } from '../libs/IconWalletProvider.js';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -179,33 +181,37 @@ export type StellarUninitializedConfig = {
 export type StellarInitializedConfig = {
   sorobanUrl: HttpPrefixedUrl;
   networkPassphrase: string;
-  wallet?: {
+  wallet: {
     address: string;
   };
   provider: StellarProviderType
 };
+
+export type StellarConfig = StellarUninitializedConfig | StellarInitializedConfig;
 
 export class StellarProvider {
   public readonly wallet: StellarWalletProvider;
   public readonly server: StellarSdk.rpc.Server;
   public readonly networkPassphrase: string;
 
-  constructor(payload: StellarUninitializedConfig | StellarInitializedConfig) {
+  constructor(payload: StellarConfig) {
     this.server = new StellarSdk.rpc.Server(payload.sorobanUrl);
     this.networkPassphrase = payload.networkPassphrase;
-    if ('provider' in payload) {
+    if (isStellarInitializedConfig(payload)) {
       this.wallet = new StellarWalletProvider(
           payload.wallet,
           this.server,
           this.networkPassphrase,
           payload.provider
       );
-    } else {
+    } else if(isStellarUninitializedPrivateKeyConfig(payload.wallet)) {
       this.wallet = new StellarWalletProvider(
           payload.wallet,
           this.server,
           this.networkPassphrase
       );
+    }else{
+      throw new Error('Invalid configuration payload passed to StellarProvider');
     }
   }
 }
