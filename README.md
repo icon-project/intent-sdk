@@ -182,6 +182,32 @@ if (connectionStatus === "connected" && account) {
   throw new Error("Wallet or Account undefined. Please connect wallet and select account.")
 }
 ```
+Stellar Provider example:
+
+```typescript
+import { StellarProvider } from "@iconproject/intents-sdk"
+
+// using private key
+const stellarProvider = new StellarProvider({
+  sorobanUrl: "https://stellar-soroban-public.nodies.app",
+  networkPassphrase: "Public Global Stellar Network ; September 2015",
+  wallet: {
+    address: "GCTLW4KZRMYA55XSEX5KIYPASLNQKMOGUYXI2DVFLZOVDX44IPBKTE7M",
+    privateKey: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  }
+})
+
+//using signTransaction method of wallet function
+const stellarProvider = new StellarProvider({
+  sorobanUrl: "https://stellar-soroban-public.nodies.app",
+  networkPassphrase: "Public Global Stellar Network ; September 2015",
+  wallet: {
+    address: "GCTLW4KZRMYA55XSEX5KIYPASLNQKMOGUYXI2DVFLZOVDX44IPBKTE7M",
+  },
+  provider: (window as any).stellar
+})
+
+```
 
 ## Create Intent Order
 

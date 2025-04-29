@@ -1,8 +1,8 @@
 import type { Address } from 'viem';
 import type { TransactionResult as SuiTransactionResult } from '@mysten/sui/transactions';
 
-export type ChainType = 'evm' | 'sui' | 'icon';
-export type ChainName = 'sui' | 'arb' | 'pol' | 'icon';
+export type ChainType = 'evm' | 'sui' | 'icon' | 'stellar';
+export type ChainName = 'sui' | 'arb' | 'pol' | 'icon' | 'stellar';
 export type ChainInfo<T extends ChainType> = {
   name: ChainName;
   type: T;
@@ -54,20 +54,27 @@ export type SuiChainConfig = BaseChainConfig<'sui'> & {
   nativeToken: string;
 };
 
+export type StellarChainConfig = BaseChainConfig<'stellar'> & {
+  intentContract: string;
+  nativeToken: string;
+};
+
 export type IconChainConfig = BaseChainConfig<'icon'> & {
   intentContract: IconSmartContractAddress;
   nativeToken: IconSmartContractAddress;
 };
 
-export type ChainConfig = EvmChainConfig | SuiChainConfig | IconChainConfig;
+export type ChainConfig = EvmChainConfig | SuiChainConfig | IconChainConfig | StellarChainConfig;
 
 export type GetChainConfigType<T extends ChainName> = T extends 'sui'
-  ? SuiChainConfig
-  : T extends 'arb' | 'pol'
-    ? EvmChainConfig
-    : T extends 'icon'
-      ? IconChainConfig
-      : never;
+    ? SuiChainConfig
+    : T extends 'arb' | 'pol'
+        ? EvmChainConfig
+        : T extends 'icon'
+            ? IconChainConfig
+            : T extends 'stellar'
+                ? StellarChainConfig
+                : never;
 
 export type Result<T, E = Error | unknown> = { ok: true; value: T } | { ok: false; error: E };
 
@@ -134,7 +141,7 @@ export type IntentServiceConfig = {
   solverApiEndpoint: string;
 };
 
-export type HttpPrefixedUrl = `http${string}`;
+export type HttpPrefixedUrl = string;
 
 export type PrivateKeyHolder<T = string> = {
   privateKey: T;

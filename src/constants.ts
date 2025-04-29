@@ -1,12 +1,19 @@
 import type { Chain } from 'viem';
 import { arbitrum, polygon } from 'viem/chains';
-import type { ChainConfig, ChainName, EvmChainConfig, IconChainConfig, SuiChainConfig } from './types.js';
+import type {
+  ChainConfig,
+  ChainName,
+  EvmChainConfig,
+  IconChainConfig,
+  StellarChainConfig,
+  SuiChainConfig
+} from './types.js';
 
 export const DEFAULT_MAX_RETRY = 3;
 export const DEFAULT_RETRY_DELAY_MS = 2000;
 export const ICON_TX_RESULT_WAIT_MAX_RETRY = 10;
 
-export const supportedChains: ChainName[] = ['arb', 'sui', 'pol', 'icon'];
+export const supportedChains: ChainName[] = ['arb', 'sui', 'pol', 'icon', 'stellar'];
 
 export function getEvmViemChain(chainName: ChainName): Chain {
   switch (chainName) {
@@ -221,4 +228,27 @@ export const chainConfig: Record<ChainName, ChainConfig> = {
       },
     ],
   } satisfies IconChainConfig,
+  ['stellar']: {
+    chain: {
+      name: 'stellar',
+      type: 'stellar',
+    },
+    nid: 'stellar',
+    intentContract: 'CDZPLSD426ZCR5XB2D7HDYEDEAS5KYZFX6JEPLFY7QOQ3QHE6DHMECW7',
+    nativeToken: 'CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA',
+    supportedTokens: [
+      {
+        symbol: 'XLM',
+        name: 'Stellar',
+        decimals: 7,
+        address: 'CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA',
+      },
+      {
+        symbol: 'USDC',
+        name: 'USD Coin',
+        decimals: 7,
+        address: 'CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75',
+      },
+    ],
+  } satisfies StellarChainConfig,
 } as const;

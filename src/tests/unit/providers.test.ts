@@ -4,7 +4,7 @@ import {
   IconProvider,
   SuiProvider,
   type EvmUninitializedBrowserConfig,
-  type IconUninitializedConfig,
+  type IconUninitializedConfig, StellarProvider,
 } from '../../entities/index.js';
 import { IconService, HttpProvider } from 'icon-sdk-js';
 import type { SuiClient } from '@mysten/sui/client';
@@ -128,3 +128,43 @@ describe('Providers', () => {
     });
   });
 });
+
+describe('StellarProvider', () => {
+  const sorobanUrl = 'https://stellar-soroban-public.nodies.app';
+  const networkPassphrase = 'Public Global Stellar Network ; September 2015';
+  const privateKey = 'SCSGIKWUV4DIJBA7IKZ3U6IARLNVG3DOMTF4K4HMTFCSUE55ICTKZBBD' //Test PK
+  const publickey = 'GCTLW4KZRMYA55XSEX5KIYPASLNQKMOGUYXI2DVFLZOVDX44IPBKTE7M' //Generate from above pk
+
+  it('should initialize with valid config', () => {
+    const provider = new StellarProvider({
+      sorobanUrl,
+      networkPassphrase,
+      wallet: {
+        address: publickey,
+        privateKey
+      }
+    })
+
+    expect(provider.wallet).toBeDefined();
+    expect(provider.networkPassphrase).toBe(networkPassphrase);
+    expect(provider.wallet.getAddress()).toBe(publickey);
+  })
+  it('should initialize with valid provider', () => {
+    const provider = new StellarProvider({
+      sorobanUrl,
+      networkPassphrase,
+      wallet: {
+        address: publickey,
+      },
+      provider: {
+        signTransaction: async (tx) => {
+          return 'Result the signed and submitted tx hash';
+        }
+      }
+    })
+
+    expect(provider.wallet).toBeDefined();
+    expect(provider.networkPassphrase).toBe(networkPassphrase);
+    expect(provider.wallet.signTransaction).toBeDefined();
+  })
+})

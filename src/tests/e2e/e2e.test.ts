@@ -89,8 +89,6 @@ describe('e2e', () => {
       throw new Error('Failed to get quote');
     }
 
-    console.log(quoteResult);
-
     expect(true).toBe(true);
   });
 });
