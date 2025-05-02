@@ -14,7 +14,7 @@ import {
   SorobanRpc,
   BASE_FEE,
 } from "@stellar/stellar-sdk";
-import { Api, type Server } from "@stellar/stellar-sdk/rpc";
+import type { Server } from "@stellar/stellar-sdk/rpc";
 import { bigintToUInt128Parts, extractScVal } from "../utils/stellar-utils.js";
 
 export class StellarIntentService {
@@ -336,7 +336,7 @@ export class StellarIntentService {
   private static async getTxResult(
     server: Server,
     txHash: string,
-    maxAttempts = 3,
+    maxAttempts = 10,
   ) {
     let attempts = 0;
 
@@ -351,13 +351,13 @@ export class StellarIntentService {
         attempts++;
 
         if (attempts < maxAttempts) {
-          await StellarIntentService.sleep(500);
+          await StellarIntentService.sleep(1000);
         }
       } catch (error) {
         attempts++;
 
         if (attempts < maxAttempts) {
-          await StellarIntentService.sleep(500);
+          await StellarIntentService.sleep(1000);
         }
       }
     }
