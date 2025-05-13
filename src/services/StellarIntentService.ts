@@ -336,7 +336,7 @@ export class StellarIntentService {
   private static async getTxResult(
     server: Server,
     txHash: string,
-    maxAttempts = 10,
+    maxAttempts = 30,
   ) {
     let attempts = 0;
 
