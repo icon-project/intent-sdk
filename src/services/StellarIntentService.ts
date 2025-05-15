@@ -141,9 +141,8 @@ export class StellarIntentService {
         }),
       );
 
-      const sourceAccount = await provider.server.getAccount(walletAddress);
-
-      const simTx = new TransactionBuilder(sourceAccount, {
+      const sourceAccountForSimulation = await provider.server.getAccount(walletAddress);
+      const simulationTransaction = new TransactionBuilder(sourceAccountForSimulation, {
         fee: BASE_FEE.toString(),
         networkPassphrase: provider.networkPassphrase,
       })
@@ -155,7 +154,25 @@ export class StellarIntentService {
         .setTimeout(60)
         .build();
 
-      const simulation = await provider.server._simulateTransaction(simTx);
+      const simulationForFee = await provider.server._simulateTransaction(simulationTransaction);
+      const priorityFee = '10000';
+      const minResourceFee = simulationForFee.minResourceFee || BASE_FEE.toString();
+      const totalFee = (BigInt(priorityFee) + BigInt(minResourceFee)).toString();
+
+      const sourceAccount = await provider.server.getAccount(walletAddress);
+      const priorityTransaction = new TransactionBuilder(sourceAccount, {
+        fee: totalFee,
+        networkPassphrase: provider.networkPassphrase,
+      })
+          .addOperation(
+              Operation.invokeHostFunction({
+                func: hostFunction,
+              }),
+          )
+          .setTimeout(60)
+          .build();
+
+      const simulation = await provider.server._simulateTransaction(priorityTransaction);
 
       if (simulation.error) {
         throw new Error(`Simulation error: ${simulation.error}`);
@@ -164,7 +181,7 @@ export class StellarIntentService {
       if (!simulation.transactionData) {
         throw new Error("Missing transaction data from simulation");
       }
-      const txWithResources = SorobanRpc.assembleTransaction(simTx, simulation);
+      const txWithResources = SorobanRpc.assembleTransaction(priorityTransaction, simulation);
       return txWithResources.build();
     } catch (error) {
       console.error("Error constructing swap transaction:", error);
