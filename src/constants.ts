@@ -11,7 +11,7 @@ import type {
 
 export const DEFAULT_MAX_RETRY = 3;
 export const DEFAULT_RETRY_DELAY_MS = 2000;
-export const ICON_TX_RESULT_WAIT_MAX_RETRY = 10;
+export const ICON_TX_RESULT_WAIT_MAX_RETRY = 20;
 
 export const supportedChains: ChainName[] = ['arb', 'sui', 'pol', 'icon', 'stellar'];
 
