@@ -2,8 +2,7 @@ import type { Result } from "../types.js";
 import { isPrivateKeyInit } from "../guards.js";
 import * as StellarSdk from "@stellar/stellar-sdk";
 import { TransactionBuilder } from "@stellar/stellar-sdk";
-import { isPrivateKeyWallet, isProviderWallet, isTransactionContainSignature } from "../utils/index.js";
-import {FeeBumpTransaction} from "@stellar/stellar-base";
+import { isPrivateKeyWallet, isProviderWallet } from "../utils/index.js";
 
 export type StellarAddress = string;
 
