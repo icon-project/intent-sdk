@@ -8,14 +8,17 @@ import type {
 } from "../types.js";
 import {
   TransactionBuilder,
+  type Transaction,
   xdr,
   Address,
   Operation,
   SorobanRpc,
   BASE_FEE,
 } from "@stellar/stellar-sdk";
-import type { Server } from "@stellar/stellar-sdk/rpc";
+import {Api, type Server} from "@stellar/stellar-sdk/rpc";
 import { bigintToUInt128Parts, extractScVal } from "../utils/stellar-utils.js";
+import isSimulationSuccess = Api.isSimulationSuccess;
+import isSimulationRestore = Api.isSimulationRestore;
 
 export class StellarIntentService {
   private constructor() {}
@@ -53,13 +56,13 @@ export class StellarIntentService {
         ),
       );
 
-      const transaction = await StellarIntentService.constructSwapTransaction(
+      const { transaction, continueExecution } = await StellarIntentService.constructSwapTransaction(
         intent,
         fromChainConfig,
         provider,
       );
 
-      return provider.wallet.sendTransaction(transaction);
+      return provider.wallet.sendTransaction(transaction, continueExecution);
     } catch (e) {
       console.error("Error creating intent order:", e);
       return {
@@ -79,7 +82,7 @@ export class StellarIntentService {
     intent: SwapOrder,
     chainConfig: StellarChainConfig,
     provider: StellarProvider,
-  ) {
+  ): Promise<{ transaction: Transaction; continueExecution?: (() => Promise<Transaction>) }>  {
     try {
       const walletAddress = provider.wallet.getAddress();
       const contractAddress = Address.fromString(
@@ -154,35 +157,61 @@ export class StellarIntentService {
         .setTimeout(60)
         .build();
 
+      const transactionResponse = await provider.server.simulateTransaction(simulationTransaction)
       const simulationForFee = await provider.server._simulateTransaction(simulationTransaction);
-      const priorityFee = '10000';
-      const minResourceFee = simulationForFee.minResourceFee || BASE_FEE.toString();
-      const totalFee = (BigInt(priorityFee) + BigInt(minResourceFee)).toString();
 
-      const sourceAccount = await provider.server.getAccount(walletAddress);
-      const priorityTransaction = new TransactionBuilder(sourceAccount, {
-        fee: totalFee,
-        networkPassphrase: provider.networkPassphrase,
-      })
-          .addOperation(
-              Operation.invokeHostFunction({
-                func: hostFunction,
-              }),
-          )
-          .setTimeout(60)
-          .build();
-
-      const simulation = await provider.server._simulateTransaction(priorityTransaction);
-
-      if (simulation.error) {
-        throw new Error(`Simulation error: ${simulation.error}`);
+      if(!isSimulationSuccess(transactionResponse)){
+        throw new Error(`Simulation Failed: ${JSON.stringify(transactionResponse)}`);
       }
 
-      if (!simulation.transactionData) {
-        throw new Error("Missing transaction data from simulation");
+      const executeTransactionFn = async () => {
+        const priorityFee = '10000';
+        const minResourceFee = simulationForFee.minResourceFee || BASE_FEE.toString();
+        const totalFee = (BigInt(priorityFee) + BigInt(minResourceFee)).toString();
+
+        const sourceAccount = await provider.server.getAccount(walletAddress);
+        const priorityTransaction = new TransactionBuilder(sourceAccount, {
+          fee: totalFee,
+          networkPassphrase: provider.networkPassphrase,
+        })
+            .addOperation(
+                Operation.invokeHostFunction({
+                  func: hostFunction,
+                }),
+            )
+            .setTimeout(60)
+            .build();
+
+        const simulation = await provider.server._simulateTransaction(priorityTransaction);
+
+        if (simulation.error) {
+          throw new Error(`Simulation error: ${simulation.error}`);
+        }
+
+        if (!simulation.transactionData) {
+          throw new Error("Missing transaction data from simulation");
+        }
+        const txWithResources = SorobanRpc.assembleTransaction(priorityTransaction, simulation);
+        return txWithResources.build();
       }
-      const txWithResources = SorobanRpc.assembleTransaction(priorityTransaction, simulation);
-      return txWithResources.build();
+
+      if(isSimulationRestore(transactionResponse)){
+        const account = await provider.server.getAccount(walletAddress);
+        const fee = (Number.parseInt(BASE_FEE) + Number.parseInt(transactionResponse.minResourceFee)).toString();
+        const restoreTx = new TransactionBuilder(account, {fee})
+            .setNetworkPassphrase(provider.networkPassphrase)
+            .setSorobanData(transactionResponse.transactionData.build())
+            .addOperation(Operation.restoreFootprint({}))
+            .setTimeout(200)
+            .build();
+
+        return { transaction: restoreTx, continueExecution: executeTransactionFn };
+      };
+
+      return {
+        transaction: await executeTransactionFn(),
+      };
+
     } catch (error) {
       console.error("Error constructing swap transaction:", error);
       throw error;
