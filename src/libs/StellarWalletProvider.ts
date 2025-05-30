@@ -106,7 +106,7 @@ export class StellarWalletProvider implements StellarWallet {
     try {
       const initialResponse = await this.signAndSendTransaction(transaction);
 
-      if (typeof continueExecution === 'function') {
+      if (continueExecution && typeof continueExecution === 'function') {
         const continueTransaction = await continueExecution();
         await this.signAndSendTransaction(continueTransaction);
       }
