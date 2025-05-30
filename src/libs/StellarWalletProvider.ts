@@ -2,7 +2,7 @@ import type { Result } from "../types.js";
 import { isPrivateKeyInit } from "../guards.js";
 import * as StellarSdk from "@stellar/stellar-sdk";
 import { TransactionBuilder } from "@stellar/stellar-sdk";
-import { isPrivateKeyWallet, isProviderWallet, isTransactionContainSignature } from "../utils/index.js";
+import { isPrivateKeyWallet, isProviderWallet } from "../utils/index.js";
 
 export type StellarAddress = string;
 
@@ -59,17 +59,39 @@ export class StellarWalletProvider implements StellarWallet {
   }
 
   async signTransaction(
-    transaction: StellarSdk.Transaction,
-  ): Promise<StellarSdk.Transaction> {
-    if (!this._keypair) {
-      throw new Error(
-        "[StellarWalletProvider] Cannot sign transaction: no keypair available",
-      );
+      transaction: StellarSdk.Transaction
+  ):  Promise<StellarSdk.Transaction> {
+    if (isProviderWallet(this.wallet.privateKey, this._provider)) {
+      const signedXdr = await this._provider!.signTransaction({
+        xdr: transaction.toXDR(),
+        accountToSign: this.wallet.address,
+        networkPassphrase: this.networkPassphrase,
+      });
+
+      return TransactionBuilder.fromXDR(signedXdr, this.networkPassphrase) as StellarSdk.Transaction
+    }
+    else if (isPrivateKeyWallet(this._keypair)) {
+      transaction.sign(this._keypair);
+      return transaction;
+    }
+    else {
+      throw new Error("[StellarWalletProvider] Wallet not initialized");
+    }
+  }
+
+  private async signAndSendTransaction(
+      transaction: StellarSdk.Transaction
+  ) {
+    const signedTransaction = await this.signTransaction(transaction);
+    const response = await this.server.sendTransaction(signedTransaction);
+
+    if (response?.status === "ERROR") {
+      throw new Error(`Transaction failed: ${response.status}`);
     }
 
-    transaction.sign(this._keypair);
-    return transaction;
+    return response;
   }
+
   get wallet(): StellarWalletType {
     if (!this._wallet) {
       throw new Error("[Stellar] Wallet not initialized");
@@ -78,61 +100,24 @@ export class StellarWalletProvider implements StellarWallet {
   }
 
   async sendTransaction(
-    transaction: StellarSdk.Transaction,
+      transaction: StellarSdk.Transaction,
+      continueExecution?: () => Promise<StellarSdk.Transaction>
   ): Promise<Result<string>> {
-    if (isProviderWallet(this.wallet.privateKey, this._provider)) {
-      const signedXdr = await this._provider!.signTransaction({
-        xdr: transaction.toXDR(),
-        accountToSign: this.wallet.address,
-        networkPassphrase: this.networkPassphrase,
-      });
-      const signedTransaction = TransactionBuilder.fromXDR(
-        signedXdr,
-        this.networkPassphrase,
-      );
-      const response = await this.server.sendTransaction(signedTransaction);
-
-      if (response?.status === "ERROR") {
-        throw new Error(response.status);
-      }
-
-      return {
-        ok: true,
-        value: response.hash,
-      };
-
-    } else if(isPrivateKeyWallet(this._keypair)){
-      transaction.sign(this._keypair);
-    } else {
-      throw new Error("[StellarWalletProvider] Wallet not initialized");
-    }
-
     try {
-      if (isTransactionContainSignature(transaction))
-      {
-        return {
-          ok: false,
-          error: new Error(
-            "[StellarWalletProvider] Transaction is not signed",
-          ),
-        };
-      }
+      const initialResponse = await this.signAndSendTransaction(transaction);
 
-      const response = await this.server.sendTransaction(transaction);
-
-      if (response?.status === "ERROR") {
-        throw new Error(response.status);
+      if (continueExecution && typeof continueExecution === 'function') {
+        const continueTransaction = await continueExecution();
+        await this.signAndSendTransaction(continueTransaction);
       }
 
       return {
         ok: true,
-        value: response.hash,
+        value: initialResponse.hash,
       };
-    } catch (e) {
-      return {
-        ok: false,
-        error: e,
-      };
+    } catch (error) {
+      throw new Error(`Error: ${JSON.stringify(error)}`);
     }
   }
+
 }
